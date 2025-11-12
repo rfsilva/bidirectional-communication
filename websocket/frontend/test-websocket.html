@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste WebSocket Direto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .log {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Teste de Conectividade WebSocket</h1>
+    
+    <div>
+        <button class="btn-primary" onclick="testServerHealth()">1. Testar Servidor</button>
+        <button class="btn-primary" onclick="testWebSocketEndpoint()">2. Testar Endpoint WS</button>
+        <button class="btn-success" onclick="connectWebSocket()">3. Conectar WebSocket</button>
+        <button class="btn-warning" onclick="sendTestMessage()">4. Enviar Teste</button>
+        <button class="btn-danger" onclick="disconnectWebSocket()">5. Desconectar</button>
+        <button onclick="clearLog()">Limpar Log</button>
+    </div>
+
+    <div id="status">
+        <strong>Status:</strong> <span id="connectionStatus">Desconectado</span>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <!-- Incluir bibliotecas WebSocket -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
+
+    <script>
+        let stompClient = null;
+        const baseUrl = 'http://localhost:8080';
+        const wsUrl = 'http://localhost:8080/ws'; // Note: HTTP para SockJS
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function updateStatus(status) {
+            document.getElementById('connectionStatus').textContent = status;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        async function testServerHealth() {
+            log('🔍 Testando conexão com servidor...', 'info');
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Servidor respondeu: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    log(`❌ Servidor retornou erro: ${response.status} - ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro ao conectar com servidor: ${error.message}`, 'error');
+                log(`💡 Verifique se o servidor Spring Boot está rodando em ${baseUrl}`, 'info');
+            }
+        }
+
+        async function testWebSocketEndpoint() {
+            log('🔍 Testando endpoint WebSocket...', 'info');
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/websocket/status`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Endpoint WebSocket está acessível: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    log(`❌ Endpoint WebSocket retornou erro: ${response.status} - ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro ao acessar endpoint WebSocket: ${error.message}`, 'error');
+            }
+        }
+
+        function connectWebSocket() {
+            if (stompClient && stompClient.connected) {
+                log('⚠️ WebSocket já está conectado', 'info');
+                return;
+            }
+
+            log('🔄 Conectando ao WebSocket via SockJS...', 'info');
+            
+            try {
+                stompClient = new StompJs.Client({
+                    // Usar SockJS como factory
+                    webSocketFactory: function () {
+                        return new SockJS(wsUrl);
+                    },
+                    debug: function (str) {
+                        log(`🔍 STOMP Debug: ${str}`, 'info');
+                    },
+                    reconnectDelay: 0,
+                    heartbeatIncoming: 4000,
+                    heartbeatOutgoing: 4000,
+                    onConnect: function (frame) {
+                        log('✅ WebSocket conectado com sucesso!', 'success');
+                        updateStatus('Conectado');
+                        log(`📊 Frame de conexão: ${JSON.stringify(frame.headers)}`, 'info');
+                        
+                        // Subscrever ao tópico de notificações
+                        stompClient.subscribe('/topic/notifications', function (message) {
+                            log(`📨 Mensagem recebida: ${message.body}`, 'success');
+                            try {
+                                const data = JSON.parse(message.body);
+                                log(`📋 Dados processados: ${JSON.stringify(data, null, 2)}`, 'info');
+                            } catch (e) {
+                                log(`⚠️ Dados não são JSON válido`, 'info');
+                            }
+                        });
+                        
+                        log('📡 Subscrito ao tópico /topic/notifications', 'success');
+                    },
+                    onStompError: function (frame) {
+                        log(`❌ Erro STOMP: ${frame.headers['message']}`, 'error');
+                        log(`📄 Headers: ${JSON.stringify(frame.headers)}`, 'error');
+                        log(`📄 Body: ${frame.body}`, 'error');
+                        updateStatus('Erro');
+                    },
+                    onWebSocketError: function (error) {
+                        log(`❌ Erro WebSocket: ${error}`, 'error');
+                        updateStatus('Erro');
+                    },
+                    onDisconnect: function (frame) {
+                        log('🔌 WebSocket desconectado', 'info');
+                        updateStatus('Desconectado');
+                    }
+                });
+
+                stompClient.activate();
+
+            } catch (error) {
+                log(`💥 Erro ao criar cliente WebSocket: ${error.message}`, 'error');
+                updateStatus('Erro');
+            }
+        }
+
+        function sendTestMessage() {
+            if (!stompClient || !stompClient.connected) {
+                log('❌ WebSocket não está conectado', 'error');
+                return;
+            }
+
+            const testMessage = {
+                message: `Teste de mensagem - ${new Date().toLocaleTimeString()}`
+            };
+
+            log(`📤 Enviando mensagem de teste: ${JSON.stringify(testMessage)}`, 'info');
+            
+            try {
+                stompClient.publish({
+                    destination: '/app/test',
+                    body: JSON.stringify(testMessage)
+                });
+                log('✅ Mensagem enviada com sucesso', 'success');
+            } catch (error) {
+                log(`❌ Erro ao enviar mensagem: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnectWebSocket() {
+            if (stompClient) {
+                log('🔌 Desconectando WebSocket...', 'info');
+                stompClient.deactivate();
+                stompClient = null;
+                updateStatus('Desconectado');
+                log('✅ WebSocket desconectado', 'success');
+            } else {
+                log('⚠️ WebSocket não estava conectado', 'info');
+            }
+        }
+
+        // Auto-teste ao carregar a página
+        window.onload = function() {
+            log('🚀 Página carregada, iniciando testes automáticos...', 'info');
+            setTimeout(testServerHealth, 1000);
+            setTimeout(testWebSocketEndpoint, 3000);
+        };
+    </script>
+</body>
+</html>
