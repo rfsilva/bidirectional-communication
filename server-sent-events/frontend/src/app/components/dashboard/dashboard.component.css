@@ -1,0 +1,163 @@
+/* Dashboard specific styles */
+.display-4 {
+  font-weight: 300;
+  color: #495057;
+}
+
+.stats-card {
+  transition: transform 0.2s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+}
+
+.nav-tabs .nav-link {
+  border: none;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: #007bff;
+  color: white;
+  border-radius: 6px 6px 0 0;
+}
+
+.nav-tabs .nav-link:hover:not(.active) {
+  background-color: #f8f9fa;
+  border-color: transparent;
+}
+
+.data-item {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.data-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.data-item.external {
+  border-left: 4px solid #28a745;
+  background: linear-gradient(135deg, #ffffff, #f8fff9);
+}
+
+.data-item.internal {
+  border-left: 4px solid #007bff;
+  background: linear-gradient(135deg, #ffffff, #f8fbff);
+}
+
+.alert {
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.alert-success {
+  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+  color: #155724;
+}
+
+.alert-danger {
+  background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+  color: #721c24;
+}
+
+.alert-info {
+  background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+  color: #0c5460;
+}
+
+.alert-primary {
+  background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+  color: #004085;
+}
+
+.alert-secondary {
+  background: linear-gradient(135deg, #e2e3e5, #d6d8db);
+  color: #383d41;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.25em 0.5em;
+}
+
+.btn-outline-danger:hover {
+  transform: scale(1.1);
+}
+
+code {
+  background-color: rgba(0,0,0,0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.8em;
+}
+
+/* Scrollbar customization */
+.card-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.card-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Animation for new notifications */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert {
+  animation: fadeInDown 0.3s ease-out;
+}
+
+/* Loading spinner */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Form improvements */
+.form-control:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+  border-color: #80bdff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .display-4 {
+    font-size: 2rem;
+  }
+  
+  .stats-card .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .data-item {
+    margin-bottom: 8px;
+  }
+  
+  .alert {
+    font-size: 0.8rem;
+  }
+}
