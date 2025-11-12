@@ -17,7 +17,9 @@ public class CorsConfig {
                         .allowedOrigins("http://localhost:4200")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowCredentials(true)
+                        .exposedHeaders("Content-Type", "Cache-Control", "Connection")
+                        .maxAge(3600); // Cache preflight por 1 hora
             }
         };
     }

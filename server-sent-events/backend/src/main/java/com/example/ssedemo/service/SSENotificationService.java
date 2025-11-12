@@ -4,6 +4,7 @@ import com.example.ssedemo.model.NotificationMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -17,10 +18,12 @@ public class SSENotificationService {
 
     private static final Logger logger = LoggerFactory.getLogger(SSENotificationService.class);
     private final Set<SseEmitter> emitters = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     public SseEmitter createEmitter() {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        SseEmitter emitter = new SseEmitter(0L); // Timeout infinito
         
         emitter.onCompletion(() -> {
             logger.info("SSE connection completed");

@@ -14,6 +14,7 @@ export class SSEService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 3000;
+  private reconnectTimer: any = null;
 
   public notifications$ = this.notificationsSubject.asObservable();
   public connectionStatus$ = this.connectionStatusSubject.asObservable();
@@ -45,6 +46,12 @@ export class SSEService {
           this.connectionStatusSubject.next(true);
           this.reconnectAttempts = 0;
           this.reconnectDelay = 3000;
+          
+          // Limpar timer de reconexão se existir
+          if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+          }
         });
       };
 
@@ -76,21 +83,21 @@ export class SSEService {
           // Verificar se é um erro de rede ou servidor
           if (this.eventSource?.readyState === EventSource.CLOSED) {
             console.error('🔒 Conexão foi fechada pelo servidor ou erro de rede');
-          }
-          
-          if (this.reconnectAttempts < this.maxReconnectAttempts) {
-            this.reconnectAttempts++;
-            console.log(`🔄 Tentativa de reconexão ${this.reconnectAttempts}/${this.maxReconnectAttempts} em ${this.reconnectDelay}ms`);
             
-            setTimeout(() => {
-              this.connect();
-            }, this.reconnectDelay);
-            
-            // Aumentar delay progressivamente
-            this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 30000);
-          } else {
-            console.error('💀 Máximo de tentativas de reconexão atingido');
-            console.error('🔧 Verifique se o servidor está rodando em:', this.sseUrl);
+            if (this.reconnectAttempts < this.maxReconnectAttempts) {
+              this.reconnectAttempts++;
+              console.log(`🔄 Tentativa de reconexão ${this.reconnectAttempts}/${this.maxReconnectAttempts} em ${this.reconnectDelay}ms`);
+              
+              this.reconnectTimer = setTimeout(() => {
+                this.connect();
+              }, this.reconnectDelay);
+              
+              // Aumentar delay progressivamente
+              this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 30000);
+            } else {
+              console.error('💀 Máximo de tentativas de reconexão atingido');
+              console.error('🔧 Verifique se o servidor está rodando em:', this.sseUrl);
+            }
           }
         });
       };
@@ -123,6 +130,11 @@ export class SSEService {
   }
 
   disconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    
     if (this.eventSource) {
       console.log('🔌 Desconectando SSE...');
       this.eventSource.close();
@@ -173,7 +185,8 @@ export class SSEService {
       reconnectAttempts: this.reconnectAttempts,
       maxReconnectAttempts: this.maxReconnectAttempts,
       reconnectDelay: this.reconnectDelay,
-      hasEventSource: !!this.eventSource
+      hasEventSource: !!this.eventSource,
+      hasReconnectTimer: !!this.reconnectTimer
     };
   }
 }
