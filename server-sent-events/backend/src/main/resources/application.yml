@@ -5,26 +5,35 @@ spring:
   application:
     name: sse-demo-backend
   
+  # Configuração do MySQL
   datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
-  
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-  
+    url: jdbc:mysql://localhost:3306/sse_demo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: sse_user
+    password: sse_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    
+  # Configuração do JPA/Hibernate
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+      ddl-auto: validate # Flyway gerencia o schema
+    show-sql: false # Desabilitado em produção
     properties:
       hibernate:
         format_sql: true
-    defer-datasource-initialization: true
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+  
+  # Configuração do Flyway
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    sql-migration-suffixes: .sql
+    encoding: UTF-8
+    validate-on-migrate: true
+    clean-disabled: true # Segurança em produção
   
   jackson:
     serialization:
@@ -39,10 +48,9 @@ spring:
     fallback-to-system-locale: false
     always-use-message-format: false
 
-  # Configuração de locale - SEMPRE inglês por padrão
+  # Configuração de locale - Removido locale-resolver (será configurado via @Bean)
   web:
     locale: en
-    locale-resolver: session
 
 # SpringDoc OpenAPI 3 Configuration
 springdoc:
@@ -80,8 +88,32 @@ app:
 logging:
   level:
     com.example.ssedemo: INFO
-    org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.springframework.context.support: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.flywaydb: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+---
+# Profile para desenvolvimento local
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    show-sql: true
+  logging:
+    level:
+      com.example.ssedemo: DEBUG
+      org.hibernate.SQL: DEBUG
+
+---
+# Profile para Docker
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:mysql://mysql:3306/sse_demo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: sse_user
+    password: sse_password

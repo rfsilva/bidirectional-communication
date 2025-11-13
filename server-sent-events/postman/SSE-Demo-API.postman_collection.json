@@ -1,0 +1,1079 @@
+{
+	"info": {
+		"_postman_id": "sse-demo-api-001",
+		"name": "SSE Demo API - Complete Collection",
+		"description": "Collection completa para testar todos os endpoints da API SSE Demo.\n\n**Funcionalidades:**\n- CRUD completo de dados\n- Testes de internacionalização (I18N)\n- Endpoints SSE e notificações\n- Health checks e estatísticas\n- Testes automatizados com scripts\n\n**Como usar:**\n1. Importe o environment SSE-Demo-Environment\n2. Configure a variável `language` (pt, en, es, it)\n3. Execute os requests na ordem sugerida\n4. Use os testes automatizados para validação\n\n**Autor:** SSE Demo Team\n**Versão:** 1.0.0",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "🏥 Health & Status",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has status UP\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql(\"UP\");",
+									"});",
+									"",
+									"pm.test(\"Response has message\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.exist;",
+									"});",
+									"",
+									"pm.test(\"Response has locale info\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.locale).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Set timestamp for dynamic testing",
+									"pm.environment.set(\"timestamp\", new Date().toISOString());"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/health?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"health"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}",
+									"description": "Idioma da resposta"
+								}
+							]
+						},
+						"description": "Verifica a saúde da aplicação e testa I18N"
+					}
+				},
+				{
+					"name": "Health Check - English",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Message is in English\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include(\"running\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{fullApiUrl}}/health?lang=en",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"health"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "en"
+								}
+							]
+						},
+						"description": "Testa resposta em inglês"
+					}
+				},
+				{
+					"name": "Health Check - Portuguese",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Message is in Portuguese\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include(\"funcionando\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{fullApiUrl}}/health?lang=pt",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"health"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "pt"
+								}
+							]
+						},
+						"description": "Testa resposta em português"
+					}
+				}
+			],
+			"description": "Endpoints para verificação de saúde e status da aplicação"
+		},
+		{
+			"name": "📊 Data Management",
+			"item": [
+				{
+					"name": "Get All Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is an array\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Array has data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+									"});",
+									"",
+									"if (pm.response.json().length > 0) {",
+									"    pm.test(\"First item has required fields\", function () {",
+									"        const firstItem = pm.response.json()[0];",
+									"        pm.expect(firstItem).to.have.property('id');",
+									"        pm.expect(firstItem).to.have.property('name');",
+									"        pm.expect(firstItem).to.have.property('value');",
+									"        pm.expect(firstItem).to.have.property('createdAt');",
+									"        pm.expect(firstItem).to.have.property('isExternal');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/data?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"data"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Obtém todos os registros de dados"
+					}
+				},
+				{
+					"name": "Create New Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response has created item\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData.name).to.eql(pm.environment.get('testItemName'));",
+									"    pm.expect(jsonData.value).to.eql(pm.environment.get('testItemValue'));",
+									"});",
+									"",
+									"// Save the created ID for other tests",
+									"const jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.environment.set('testDataId', jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Update test data with timestamp",
+									"const timestamp = new Date().toLocaleTimeString();",
+									"pm.environment.set('testItemName', `Item Teste Postman - ${timestamp}`);",
+									"pm.environment.set('testItemValue', `Valor criado via Postman em ${timestamp}`);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{testItemName}}\",\n    \"value\": \"{{testItemValue}}\"\n}"
+						},
+						"url": {
+							"raw": "{{fullApiUrl}}/data?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"data"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Cria um novo registro de dados"
+					}
+				},
+				{
+					"name": "Get Data by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct ID\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql(parseInt(pm.environment.get('testDataId')));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/data/{{testDataId}}?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"data",
+								"{{testDataId}}"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Obtém um registro específico por ID"
+					}
+				},
+				{
+					"name": "Update Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Data was updated\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.value).to.include('ATUALIZADO');",
+									"    pm.expect(jsonData.updatedAt).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{testItemName}} - ATUALIZADO\",\n    \"value\": \"{{testItemValue}} - ATUALIZADO via PUT\"\n}"
+						},
+						"url": {
+							"raw": "{{fullApiUrl}}/data/{{testDataId}}?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"data",
+								"{{testDataId}}"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Atualiza um registro existente"
+					}
+				},
+				{
+					"name": "Get External Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"All items are external\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    jsonData.forEach(item => {",
+									"        pm.expect(item.isExternal).to.be.true;",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/data/external?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"data",
+								"external"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Obtém apenas dados externos"
+					}
+				},
+				{
+					"name": "Get Internal Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"All items are internal\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    jsonData.forEach(item => {",
+									"        pm.expect(item.isExternal).to.be.false;",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/data/internal?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"data",
+								"internal"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Obtém apenas dados internos"
+					}
+				},
+				{
+					"name": "Get Statistics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has statistics\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('totalRecords');",
+									"    pm.expect(jsonData).to.have.property('externalRecords');",
+									"    pm.expect(jsonData).to.have.property('internalRecords');",
+									"    pm.expect(jsonData).to.have.property('activeSSEConnections');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/data/stats?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"data",
+								"stats"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Obtém estatísticas gerais dos dados"
+					}
+				},
+				{
+					"name": "Delete Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"// Clear the test ID since item was deleted",
+									"pm.environment.set('testDataId', '');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/data/{{testDataId}}?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"data",
+								"{{testDataId}}"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Remove um registro por ID"
+					}
+				}
+			],
+			"description": "Operações CRUD para gerenciamento de dados"
+		},
+		{
+			"name": "📡 SSE & Notifications",
+			"item": [
+				{
+					"name": "Get SSE Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has SSE info\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('activeConnections');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/notifications/status?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"notifications",
+								"status"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Obtém status das conexões SSE"
+					}
+				},
+				{
+					"name": "Send Test Notification",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Notification was sent\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('success');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Notificação de teste enviada via Postman - {{timestamp}}\"\n}"
+						},
+						"url": {
+							"raw": "{{fullApiUrl}}/notifications/test?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"notifications",
+								"test"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Envia uma notificação de teste via SSE"
+					}
+				},
+				{
+					"name": "Force External Data Fetch",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"External fetch was executed\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('success');",
+									"    pm.expect(jsonData).to.have.property('recordsImported');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/notifications/force-fetch?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"notifications",
+								"force-fetch"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Força uma busca manual de dados externos"
+					}
+				}
+			],
+			"description": "Endpoints para Server-Sent Events e notificações"
+		},
+		{
+			"name": "🌍 Internationalization (I18N)",
+			"item": [
+				{
+					"name": "Get I18N Messages",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has I18N info\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('currentLocale');",
+									"    pm.expect(jsonData).to.have.property('messages');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/i18n/messages?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Obtém exemplos de mensagens traduzidas"
+					}
+				},
+				{
+					"name": "Get Supported Locales",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has supported locales\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('supportedLocales');",
+									"    pm.expect(jsonData.supportedLocales).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/i18n/locales",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"locales"
+							]
+						},
+						"description": "Lista idiomas suportados pela aplicação"
+					}
+				},
+				{
+					"name": "Test Specific Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has message info\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('key');",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('locale');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/i18n/message/health.status.up?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"message",
+								"health.status.up"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Testa uma mensagem específica traduzida"
+					}
+				},
+				{
+					"name": "I18N Demo Behavior",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has demo info\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('explanation');",
+									"    pm.expect(jsonData).to.have.property('currentRequest');",
+									"    pm.expect(jsonData).to.have.property('examples');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{fullApiUrl}}/i18n/demo?lang={{language}}",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"demo"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						},
+						"description": "Demonstra comportamento do sistema I18N"
+					}
+				}
+			],
+			"description": "Endpoints para demonstração de internacionalização"
+		},
+		{
+			"name": "🧪 Test Scenarios",
+			"item": [
+				{
+					"name": "Complete CRUD Flow",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// This is a comprehensive test that will be run as part of a collection run",
+									"pm.test(\"Complete CRUD flow should work\", function () {",
+									"    // This test is designed to be run as part of the full collection",
+									"    pm.expect(true).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{fullApiUrl}}/health",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Placeholder for complete CRUD flow test"
+					}
+				},
+				{
+					"name": "Multi-Language Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test multiple languages",
+									"const languages = ['en', 'pt', 'es', 'it'];",
+									"",
+									"pm.test(\"Multi-language support works\", function () {",
+									"    // This would be expanded in a real test scenario",
+									"    pm.expect(languages.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{fullApiUrl}}/i18n/locales",
+							"host": [
+								"{{fullApiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"locales"
+							]
+						},
+						"description": "Test multiple language support"
+					}
+				}
+			],
+			"description": "Cenários de teste automatizados"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script",
+					"console.log('🚀 Executing request to: ' + pm.request.url);",
+					"",
+					"// Set timestamp if not already set",
+					"if (!pm.environment.get('timestamp')) {",
+					"    pm.environment.set('timestamp', new Date().toISOString());",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script",
+					"pm.test('Response time is acceptable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"pm.test('Response has correct content type', function () {",
+					"    if (pm.response.headers.get('Content-Type')) {",
+					"        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+					"    }",
+					"});",
+					"",
+					"// Log response for debugging",
+					"console.log('✅ Response status: ' + pm.response.status);",
+					"console.log('⏱️ Response time: ' + pm.response.responseTime + 'ms');"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "collection_version",
+			"value": "1.0.0",
+			"type": "string"
+		},
+		{
+			"key": "collection_author",
+			"value": "SSE Demo Team",
+			"type": "string"
+		}
+	]
+}

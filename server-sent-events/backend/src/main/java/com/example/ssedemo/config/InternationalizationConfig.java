@@ -20,6 +20,8 @@ import java.util.Locale;
  * - Para outros idiomas, deve ser usado o parâmetro ?lang=pt|es|it
  * - Não considera o header Accept-Language
  * - O frontend deve solicitar explicitamente o idioma desejado
+ * 
+ * COMPATIBILIDADE: Spring Boot 3.x
  */
 @Configuration
 public class InternationalizationConfig implements WebMvcConfigurer {
@@ -41,6 +43,8 @@ public class InternationalizationConfig implements WebMvcConfigurer {
     /**
      * Configura o LocaleResolver para usar SEMPRE inglês como padrão.
      * Ignora o header Accept-Language e usa apenas o parâmetro ?lang=
+     * 
+     * IMPORTANTE: No Spring Boot 3, deve ser configurado via @Bean, não via properties
      */
     @Bean
     public LocaleResolver localeResolver() {

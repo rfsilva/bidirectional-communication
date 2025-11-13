@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # Banco de dados MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: sse-demo-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: sse_demo
+      MYSQL_USER: sse_user
+      MYSQL_PASSWORD: sse_password
+      TZ: UTC
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - sse-demo-network
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-time-zone='+00:00'
+      --innodb-buffer-pool-size=256M
+      --max-connections=200
+      --bind-address=0.0.0.0
+      --skip-name-resolve
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "sse_user", "-psse_password"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # # Backend Spring Boot
+  # backend:
+    # build:
+      # context: ./backend
+      # dockerfile: Dockerfile
+    # container_name: sse-demo-backend
+    # restart: unless-stopped
+    # environment:
+      # SPRING_PROFILES_ACTIVE: docker
+      # SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sse_demo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      # SPRING_DATASOURCE_USERNAME: sse_user
+      # SPRING_DATASOURCE_PASSWORD: sse_password
+      # JAVA_OPTS: -Xmx512m -Xms256m
+    # ports:
+      # - "8080:8080"
+    # depends_on:
+      # mysql:
+        # condition: service_healthy
+    # networks:
+      # - sse-demo-network
+    # volumes:
+      # - backend_logs:/app/logs
+    # healthcheck:
+      # test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      # interval: 30s
+      # timeout: 10s
+      # retries: 5
+      # start_period: 90s
+
+  # # Frontend Angular (opcional - para desenvolvimento completo)
+  # frontend:
+    # build:
+      # context: ./frontend
+      # dockerfile: Dockerfile
+    # container_name: sse-demo-frontend
+    # restart: unless-stopped
+    # ports:
+      # - "4200:80"
+    # depends_on:
+      # - backend
+    # networks:
+      # - sse-demo-network
+    # environment:
+      # API_URL: http://localhost:8080
+
+# Volumes para persistência de dados
+volumes:
+  mysql_data:
+    driver: local
+    name: sse-demo-mysql-data
+  # backend_logs:
+    # driver: local
+    # name: sse-demo-backend-logs
+
+# Rede para comunicação entre containers
+networks:
+  sse-demo-network:
+    driver: bridge
+    name: sse-demo-network
