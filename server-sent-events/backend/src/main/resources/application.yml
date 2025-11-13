@@ -31,6 +31,19 @@ spring:
       write-dates-as-timestamps: false
     default-property-inclusion: non_null
 
+  # Configurações de internacionalização
+  messages:
+    basename: messages
+    encoding: UTF-8
+    cache-duration: 3600
+    fallback-to-system-locale: false
+    always-use-message-format: false
+
+  # Configuração de locale - SEMPRE inglês por padrão
+  web:
+    locale: en
+    locale-resolver: session
+
 # SpringDoc OpenAPI 3 Configuration
 springdoc:
   api-docs:
@@ -53,10 +66,22 @@ springdoc:
       display-name: 'SSE Demo API'
       paths-to-match: '/api/**'
 
+# Configurações de agendamento
+scheduling:
+  enabled: true
+
+# Configuração customizada da aplicação
+app:
+  i18n:
+    default-locale: en
+    supported-locales: en,pt,es,it
+    require-explicit-lang-param: true
+
 logging:
   level:
     com.example.ssedemo: INFO
     org.springframework.web: DEBUG
     org.hibernate.SQL: DEBUG
+    org.springframework.context.support: DEBUG
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

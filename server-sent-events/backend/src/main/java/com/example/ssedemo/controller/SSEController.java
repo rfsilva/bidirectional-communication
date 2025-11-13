@@ -1,37 +1,39 @@
 package com.example.ssedemo.controller;
 
 import com.example.ssedemo.service.ExternalDataService;
+import com.example.ssedemo.service.MessageService;
 import com.example.ssedemo.service.SSENotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
+/**
+ * Controller para gerenciamento de Server-Sent Events.
+ * Utiliza Lombok e suporte a internacionalização.
+ */
 @RestController
 @RequestMapping("/api/notifications")
 @Tag(name = "Server-Sent Events", description = "Endpoints para gerenciamento de notificações em tempo real via SSE")
+@RequiredArgsConstructor
+@Slf4j
 public class SSEController {
 
-    private static final Logger logger = LoggerFactory.getLogger(SSEController.class);
-
-    @Autowired
-    private SSENotificationService notificationService;
-
-    @Autowired
-    private ExternalDataService externalDataService;
+    private final SSENotificationService notificationService;
+    private final ExternalDataService externalDataService;
+    private final MessageService messageService;
 
     @Operation(
         summary = "Stream de notificações SSE", 
@@ -45,7 +47,8 @@ public class SSEController {
     })
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamNotifications() {
-        logger.info("Nova conexão SSE solicitada");
+        String connectionMessage = messageService.getSSEMessage("connection.established");
+        log.info(connectionMessage);
         return notificationService.createEmitter();
     }
 
@@ -74,14 +77,18 @@ public class SSEController {
                         }
                         """)))
             @RequestBody Map<String, String> request) {
-        String message = request.getOrDefault("message", "Notificação de teste");
-        logger.info("Enviando notificação de teste: {}", message);
         
-        notificationService.sendInfoNotification(message);
+        String userMessage = request.getOrDefault("message", 
+            messageService.getMessage("sse.test.notification", "Default test message"));
+        
+        String testMessage = messageService.getSSEMessage("test.notification", userMessage);
+        log.info(testMessage);
+        
+        notificationService.sendInfoNotification(userMessage);
         
         return ResponseEntity.ok(Map.of(
             "status", "success",
-            "message", "Notificação enviada",
+            "message", messageService.getMessage("sse.test.notification", "Notification sent"),
             "activeConnections", String.valueOf(notificationService.getActiveConnectionsCount())
         ));
     }
@@ -112,23 +119,26 @@ public class SSEController {
     })
     @PostMapping("/force-fetch")
     public ResponseEntity<Map<String, Object>> forceExternalDataFetch() {
-        logger.info("Busca manual de dados externos solicitada via API");
+        String fetchMessage = messageService.getMessage("external.data.fetch.forced");
+        log.info(fetchMessage);
         
         try {
             var newData = externalDataService.forceExternalDataFetch();
+            String successMessage = messageService.getMessage("external.data.fetch.success");
             
             return ResponseEntity.ok(Map.of(
                 "status", "success",
-                "message", "Busca de dados externos executada",
+                "message", successMessage,
                 "recordsImported", newData.size()
             ));
             
         } catch (Exception e) {
-            logger.error("Erro na busca manual: {}", e.getMessage(), e);
+            String errorMessage = messageService.getMessage("external.data.fetch.error", e.getMessage());
+            log.error(errorMessage, e);
             
             return ResponseEntity.internalServerError().body(Map.of(
                 "status", "error",
-                "message", "Erro ao buscar dados externos",
+                "message", errorMessage,
                 "error", e.getMessage()
             ));
         }
@@ -152,11 +162,13 @@ public class SSEController {
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getSSEStatus() {
         int activeConnections = notificationService.getActiveConnectionsCount();
+        String statusMessage = messageService.getMessage("health.sse.active.connections", activeConnections);
         
         return ResponseEntity.ok(Map.of(
             "activeConnections", activeConnections,
             "status", activeConnections > 0 ? "active" : "inactive",
-            "timestamp", java.time.LocalDateTime.now()
+            "statusMessage", statusMessage,
+            "timestamp", LocalDateTime.now()
         ));
     }
 }

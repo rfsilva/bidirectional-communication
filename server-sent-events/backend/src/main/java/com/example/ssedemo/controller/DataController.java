@@ -2,6 +2,7 @@ package com.example.ssedemo.controller;
 
 import com.example.ssedemo.model.DataEntity;
 import com.example.ssedemo.service.DataService;
+import com.example.ssedemo.service.MessageService;
 import com.example.ssedemo.service.SSENotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,9 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,18 +23,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Controller para gerenciamento de dados com suporte a internacionalização.
+ * Utiliza Lombok para reduzir boilerplate code.
+ */
 @RestController
 @RequestMapping("/api/data")
 @Tag(name = "Data Management", description = "Operações CRUD para gerenciamento de dados")
+@RequiredArgsConstructor
+@Slf4j
 public class DataController {
 
-    private static final Logger logger = LoggerFactory.getLogger(DataController.class);
-
-    @Autowired
-    private DataService dataService;
-
-    @Autowired
-    private SSENotificationService notificationService;
+    private final DataService dataService;
+    private final SSENotificationService notificationService;
+    private final MessageService messageService;
 
     @Operation(summary = "Listar todos os dados", description = "Retorna uma lista com todos os registros de dados")
     @ApiResponses(value = {
@@ -43,7 +45,7 @@ public class DataController {
     })
     @GetMapping
     public ResponseEntity<List<DataEntity>> getAllData() {
-        logger.info("Buscando todos os dados");
+        log.info(messageService.getInfoMessage("fetching.all.data"));
         List<DataEntity> data = dataService.findAll();
         return ResponseEntity.ok(data);
     }
@@ -58,14 +60,11 @@ public class DataController {
     public ResponseEntity<DataEntity> getDataById(
             @Parameter(description = "ID do registro a ser buscado", required = true)
             @PathVariable Long id) {
-        logger.info("Buscando dados por ID: {}", id);
+        log.info(messageService.getInfoMessage("fetching.data.by.id", id));
         Optional<DataEntity> data = dataService.findById(id);
         
-        if (data.isPresent()) {
-            return ResponseEntity.ok(data.get());
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return data.map(ResponseEntity::ok)
+                  .orElse(ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "Criar novo registro", description = "Cria um novo registro de dados e envia notificação SSE")
@@ -79,21 +78,20 @@ public class DataController {
     public ResponseEntity<DataEntity> createData(
             @Parameter(description = "Dados do registro a ser criado", required = true)
             @Valid @RequestBody DataEntity dataEntity) {
-        logger.info("Criando novo registro: {}", dataEntity.getName());
+        log.info(messageService.getInfoMessage("creating.record", dataEntity.getName()));
         
         try {
             DataEntity savedEntity = dataService.save(dataEntity);
             
             // Notificar via SSE sobre novo registro criado
-            notificationService.sendDataUpdateNotification(
-                "Novo registro criado: " + savedEntity.getName(),
-                1
-            );
+            String successMessage = messageService.getSuccessMessage("created", savedEntity.getName());
+            notificationService.sendDataUpdateNotification(successMessage, 1);
             
             return ResponseEntity.status(HttpStatus.CREATED).body(savedEntity);
             
         } catch (Exception e) {
-            logger.error("Erro ao criar registro: {}", e.getMessage(), e);
+            String errorMessage = messageService.getErrorMessage("create.failed", e.getMessage());
+            log.error(errorMessage, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -112,7 +110,7 @@ public class DataController {
             @PathVariable Long id,
             @Parameter(description = "Novos dados do registro", required = true)
             @Valid @RequestBody DataEntity dataEntity) {
-        logger.info("Atualizando registro ID: {}", id);
+        log.info(messageService.getInfoMessage("updating.record", id));
         
         if (!dataService.existsById(id)) {
             return ResponseEntity.notFound().build();
@@ -124,14 +122,14 @@ public class DataController {
             DataEntity updatedEntity = dataService.save(dataEntity);
             
             // Notificar via SSE sobre atualização
-            notificationService.sendInfoNotification(
-                "Registro atualizado: " + updatedEntity.getName()
-            );
+            String successMessage = messageService.getSuccessMessage("updated", updatedEntity.getName());
+            notificationService.sendInfoNotification(successMessage);
             
             return ResponseEntity.ok(updatedEntity);
             
         } catch (Exception e) {
-            logger.error("Erro ao atualizar registro: {}", e.getMessage(), e);
+            String errorMessage = messageService.getErrorMessage("update.failed", e.getMessage());
+            log.error(errorMessage, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -146,7 +144,7 @@ public class DataController {
     public ResponseEntity<Void> deleteData(
             @Parameter(description = "ID do registro a ser excluído", required = true)
             @PathVariable Long id) {
-        logger.info("Deletando registro ID: {}", id);
+        log.info(messageService.getInfoMessage("deleting.record", id));
         
         if (!dataService.existsById(id)) {
             return ResponseEntity.notFound().build();
@@ -156,14 +154,14 @@ public class DataController {
             dataService.deleteById(id);
             
             // Notificar via SSE sobre exclusão
-            notificationService.sendInfoNotification(
-                "Registro excluído (ID: " + id + ")"
-            );
+            String successMessage = messageService.getSuccessMessage("deleted", id);
+            notificationService.sendInfoNotification(successMessage);
             
             return ResponseEntity.noContent().build();
             
         } catch (Exception e) {
-            logger.error("Erro ao deletar registro: {}", e.getMessage(), e);
+            String errorMessage = messageService.getErrorMessage("delete.failed", e.getMessage());
+            log.error(errorMessage, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -175,7 +173,7 @@ public class DataController {
     })
     @GetMapping("/external")
     public ResponseEntity<List<DataEntity>> getExternalData() {
-        logger.info("Buscando dados externos");
+        log.info(messageService.getInfoMessage("fetching.external.data"));
         List<DataEntity> externalData = dataService.findExternalData();
         return ResponseEntity.ok(externalData);
     }
@@ -187,7 +185,7 @@ public class DataController {
     })
     @GetMapping("/internal")
     public ResponseEntity<List<DataEntity>> getInternalData() {
-        logger.info("Buscando dados internos");
+        log.info(messageService.getInfoMessage("fetching.internal.data"));
         List<DataEntity> internalData = dataService.findInternalData();
         return ResponseEntity.ok(internalData);
     }
@@ -199,7 +197,7 @@ public class DataController {
     })
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getStats() {
-        logger.info("Buscando estatísticas");
+        log.info(messageService.getInfoMessage("fetching.stats"));
         
         long totalCount = dataService.getTotalCount();
         long externalCount = dataService.findExternalData().size();

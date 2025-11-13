@@ -10,15 +10,24 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
+/**
+ * Configuração do OpenAPI (Swagger) para documentação da API.
+ */
 @Configuration
 public class OpenApiConfig {
 
+    /**
+     * Configura a documentação OpenAPI da aplicação.
+     *
+     * @return Configuração OpenAPI personalizada
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
                         .title("SSE Demo API")
-                        .description("API para demonstração de Server-Sent Events com Spring Boot 3 e Angular 18")
+                        .description("API para demonstração de Server-Sent Events com Spring Boot 3 e Angular 18. " +
+                                   "Suporta internacionalização em Português, Inglês, Espanhol e Italiano.")
                         .version("1.0.0")
                         .contact(new Contact()
                                 .name("SSE Demo Team")

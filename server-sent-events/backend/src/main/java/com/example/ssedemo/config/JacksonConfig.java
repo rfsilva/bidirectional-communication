@@ -7,9 +7,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
+/**
+ * Configuração do Jackson para serialização/deserialização JSON.
+ */
 @Configuration
 public class JacksonConfig {
 
+    /**
+     * Configura o ObjectMapper para lidar corretamente com datas e tipos Java 8+.
+     *
+     * @return ObjectMapper configurado
+     */
     @Bean
     @Primary
     public ObjectMapper objectMapper() {

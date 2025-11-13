@@ -1,9 +1,20 @@
 package com.example.ssedemo.model;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 
+/**
+ * Mensagem de notificação enviada via Server-Sent Events.
+ * Utiliza Lombok para reduzir boilerplate code.
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "Mensagem de notificação enviada via Server-Sent Events")
 public class NotificationMessage {
     
@@ -24,61 +35,29 @@ public class NotificationMessage {
             example = "2024-01-15T10:30:00")
     private LocalDateTime timestamp;
 
-    public NotificationMessage() {
+    /**
+     * Construtor para criar uma notificação com tipo e mensagem.
+     *
+     * @param type Tipo da notificação
+     * @param message Mensagem da notificação
+     */
+    public NotificationMessage(String type, String message) {
+        this.type = type;
+        this.message = message;
         this.timestamp = LocalDateTime.now();
     }
 
-    public NotificationMessage(String type, String message) {
-        this();
-        this.type = type;
-        this.message = message;
-    }
-
+    /**
+     * Construtor para criar uma notificação com tipo, mensagem e dados.
+     *
+     * @param type Tipo da notificação
+     * @param message Mensagem da notificação
+     * @param data Dados adicionais
+     */
     public NotificationMessage(String type, String message, Map<String, Object> data) {
-        this(type, message);
-        this.data = data;
-    }
-
-    // Getters and Setters
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
         this.type = type;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
         this.message = message;
-    }
-
-    public Map<String, Object> getData() {
-        return data;
-    }
-
-    public void setData(Map<String, Object> data) {
         this.data = data;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
-
-    @Override
-    public String toString() {
-        return "NotificationMessage{" +
-                "type='" + type + '\'' +
-                ", message='" + message + '\'' +
-                ", data=" + data +
-                ", timestamp=" + timestamp +
-                '}';
+        this.timestamp = LocalDateTime.now();
     }
 }

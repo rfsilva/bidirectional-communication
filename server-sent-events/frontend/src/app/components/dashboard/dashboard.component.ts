@@ -7,6 +7,7 @@ import { DataService } from '../../services/data.service';
 import { SSEService } from '../../services/sse.service';
 import { NotificationService } from '../../services/notification.service';
 import { ConnectionTestService } from '../../services/connection-test.service';
+import { LanguageService } from '../../services/language.service';
 import { DataEntity, NotificationMessage, Stats } from '../../models/data-entity.model';
 
 @Component({
@@ -38,17 +39,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // Debug info
   debugInfo: any = {};
   
+  // I18N info
+  currentLanguage = 'pt';
+  availableLanguages: any[] = [];
+  i18nInfo: any = null;
+  
   private subscriptions: Subscription[] = [];
 
   constructor(
     private dataService: DataService,
     private sseService: SSEService,
     private notificationService: NotificationService,
-    private connectionTestService: ConnectionTestService
+    private connectionTestService: ConnectionTestService,
+    private languageService: LanguageService
   ) {}
 
   ngOnInit(): void {
     console.log('🚀 Inicializando Dashboard...');
+    this.initializeI18n();
     this.runConnectivityTest();
     this.initializeSSE();
     this.loadInitialData();
@@ -58,6 +66,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe());
     this.sseService.disconnect();
+  }
+
+  private initializeI18n(): void {
+    console.log('🌍 Inicializando I18N...');
+    this.availableLanguages = this.languageService.getAvailableLanguages();
+    
+    // Monitor language changes
+    this.subscriptions.push(
+      this.languageService.currentLanguage$.subscribe(lang => {
+        this.currentLanguage = lang;
+        console.log(`🗣️ Idioma atual: ${lang}`);
+      })
+    );
+
+    // Load I18N demo info
+    this.languageService.demonstrateI18nBehavior().subscribe({
+      next: (info) => {
+        this.i18nInfo = info;
+        console.log('🌍 Informações I18N:', info);
+      },
+      error: (error) => {
+        console.error('Erro ao carregar informações I18N:', error);
+      }
+    });
   }
 
   private runConnectivityTest(): void {
@@ -137,6 +169,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.allData = data;
         this.loading = false;
+        console.log('📊 Dados carregados (com ?lang=pt automático):', data.length, 'registros');
       },
       error: (error) => {
         console.error('Erro ao carregar dados:', error);
@@ -184,16 +217,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
+    console.log('📝 Criando item (mensagens virão em português via ?lang=pt)...');
     this.dataService.createData(this.newItem).subscribe({
       next: (created) => {
-        console.log('Item criado:', created);
+        console.log('✅ Item criado com mensagens em português:', created);
         this.newItem = { name: '', value: '' };
         this.loadAllData();
         this.loadInternalData();
         this.loadStats();
       },
       error: (error) => {
-        console.error('Erro ao criar item:', error);
+        console.error('❌ Erro ao criar item:', error);
         alert('Erro ao criar item');
       }
     });
@@ -201,16 +235,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   deleteItem(id: number): void {
     if (confirm('Tem certeza que deseja excluir este item?')) {
+      console.log('🗑️ Excluindo item (mensagens virão em português via ?lang=pt)...');
       this.dataService.deleteData(id).subscribe({
         next: () => {
-          console.log('Item excluído');
+          console.log('✅ Item excluído com mensagens em português');
           this.loadAllData();
           this.loadExternalData();
           this.loadInternalData();
           this.loadStats();
         },
         error: (error) => {
-          console.error('Erro ao excluir item:', error);
+          console.error('❌ Erro ao excluir item:', error);
           alert('Erro ao excluir item');
         }
       });
@@ -223,24 +258,54 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   forceExternalFetch(): void {
+    console.log('🔄 Forçando busca externa (mensagens virão em português via ?lang=pt)...');
     this.notificationService.forceExternalDataFetch().subscribe({
       next: (response) => {
-        console.log('Busca forçada executada:', response);
+        console.log('✅ Busca forçada executada com mensagens em português:', response);
       },
       error: (error) => {
-        console.error('Erro na busca forçada:', error);
+        console.error('❌ Erro na busca forçada:', error);
       }
     });
   }
 
   sendTestNotification(): void {
-    const message = `Notificação de teste - ${new Date().toLocaleTimeString()}`;
+    const message = `Notificação de teste em português - ${new Date().toLocaleTimeString()}`;
+    console.log('📢 Enviando notificação de teste (mensagens virão em português via ?lang=pt)...');
     this.notificationService.sendTestNotification(message).subscribe({
       next: (response) => {
-        console.log('Notificação de teste enviada:', response);
+        console.log('✅ Notificação de teste enviada com mensagens em português:', response);
       },
       error: (error) => {
-        console.error('Erro ao enviar notificação de teste:', error);
+        console.error('❌ Erro ao enviar notificação de teste:', error);
+      }
+    });
+  }
+
+  // I18N specific methods
+  changeLanguage(language: string): void {
+    console.log(`🌍 Alterando idioma para: ${language}`);
+    this.languageService.setLanguage(language);
+    
+    // Reload I18N info
+    this.languageService.demonstrateI18nBehavior().subscribe({
+      next: (info) => {
+        this.i18nInfo = info;
+        console.log(`🗣️ Informações I18N atualizadas para ${language}:`, info);
+      }
+    });
+  }
+
+  testI18nMessages(): void {
+    console.log('🧪 Testando mensagens I18N...');
+    this.languageService.testI18nFunctionality().subscribe({
+      next: (response) => {
+        console.log('✅ Teste I18N executado:', response);
+        alert(`Teste I18N executado!\nIdioma: ${response.currentLocale}\nMensagem: ${response.messages?.welcome}`);
+      },
+      error: (error) => {
+        console.error('❌ Erro no teste I18N:', error);
+        alert('Erro no teste I18N');
       }
     });
   }
@@ -306,5 +371,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
       default:
         return 'alert-secondary';
     }
+  }
+
+  // Getter for template
+  get languageFlag(): string {
+    const lang = this.availableLanguages.find(l => l.code === this.currentLanguage);
+    return lang ? lang.flag : '🌍';
+  }
+
+  get languageName(): string {
+    const lang = this.availableLanguages.find(l => l.code === this.currentLanguage);
+    return lang ? lang.name : 'Unknown';
   }
 }

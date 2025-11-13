@@ -1,9 +1,8 @@
 package com.example.ssedemo.service;
 
 import com.example.ssedemo.model.DataEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -15,17 +14,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Serviço para simulação de busca de dados externos.
+ * Utiliza Lombok e suporte a internacionalização.
+ */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class ExternalDataService {
 
-    private static final Logger logger = LoggerFactory.getLogger(ExternalDataService.class);
     private final Random random = new Random();
-    
-    @Autowired
-    private DataService dataService;
-    
-    @Autowired
-    private SSENotificationService notificationService;
+    private final DataService dataService;
+    private final SSENotificationService notificationService;
+    private final MessageService messageService;
 
     private boolean appReady = false;
 
@@ -40,20 +41,27 @@ public class ExternalDataService {
         "Ativo", "Inativo", "Em análise", "Aprovado", "Rejeitado"
     };
 
+    /**
+     * Marca a aplicação como pronta após a inicialização completa.
+     */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
         this.appReady = true;
-        logger.info("Application ready");
+        log.info("Aplicação pronta para buscar dados externos");
     }
 
-    @Scheduled(fixedRate = 30000, initialDelay = 10000) // A cada 1 minuto para demonstração
+    /**
+     * Busca dados externos periodicamente (a cada 30 segundos).
+     */
+    @Scheduled(fixedRate = 30000, initialDelay = 10000)
     public void fetchExternalDataPeriodically() {
         if (!appReady) {
-            logger.warn("⏳ Aplicação ainda inicializando — agendamento ignorado temporariamente.");
+            log.warn("⏳ Aplicação ainda inicializando — agendamento ignorado temporariamente.");
             return;
         }
 
-        logger.info("Iniciando busca de dados externos...");
+        String fetchingMessage = messageService.getMessage("external.data.fetch.periodic", "Iniciando busca de dados externos...");
+        log.info(fetchingMessage);
         
         try {
             // Simula uma chance de 70% de ter novos dados
@@ -63,32 +71,35 @@ public class ExternalDataService {
                 if (!newData.isEmpty()) {
                     List<DataEntity> savedData = dataService.saveAll(newData);
                     
-                    logger.info("Salvos {} novos registros externos", savedData.size());
+                    String successMessage = messageService.getSSEMessage("external.data.fetched", savedData.size());
+                    log.info("Salvos {} novos registros externos", savedData.size());
                     
                     // Notificar via SSE
-                    notificationService.sendDataUpdateNotification(
-                        String.format("Importados %d novos registros de fonte externa", savedData.size()),
-                        savedData.size()
-                    );
+                    notificationService.sendDataUpdateNotification(successMessage, savedData.size());
                 } else {
-                    logger.info("Nenhum dado novo encontrado na fonte externa");
+                    log.info("Nenhum dado novo encontrado na fonte externa");
                 }
             } else {
-                logger.info("Nenhuma atualização disponível na fonte externa");
+                log.info("Nenhuma atualização disponível na fonte externa");
             }
             
         } catch (Exception e) {
-            logger.error("Erro ao buscar dados externos: {}", e.getMessage(), e);
+            String errorMessage = messageService.getMessage("external.data.fetch.error", e.getMessage());
+            log.error(errorMessage, e);
             
             // Notificar erro via SSE
             notificationService.sendErrorNotification(
-                "Erro ao importar dados externos",
+                messageService.getMessage("external.data.fetch.error", "Erro ao importar dados externos"),
                 e.getMessage()
             );
         }
     }
 
-    // Simula chamada para API externa
+    /**
+     * Simula uma chamada para API externa.
+     *
+     * @return Lista de dados simulados
+     */
     private List<DataEntity> simulateExternalAPICall() {
         List<DataEntity> externalData = new ArrayList<>();
         
@@ -117,13 +128,19 @@ public class ExternalDataService {
             externalData.add(entity);
         }
         
-        logger.debug("Simulação de API externa retornou {} registros", externalData.size());
+        log.debug("Simulação de API externa retornou {} registros", externalData.size());
         return externalData;
     }
 
-    // Método para forçar busca manual (útil para testes)
+    /**
+     * Força uma busca manual de dados externos.
+     *
+     * @return Lista de dados salvos
+     * @throws RuntimeException se ocorrer erro na busca
+     */
     public List<DataEntity> forceExternalDataFetch() {
-        logger.info("Busca manual de dados externos solicitada");
+        String manualFetchMessage = messageService.getMessage("external.data.fetch.forced");
+        log.info(manualFetchMessage);
         
         try {
             List<DataEntity> newData = simulateExternalAPICall();
@@ -132,10 +149,8 @@ public class ExternalDataService {
                 List<DataEntity> savedData = dataService.saveAll(newData);
                 
                 // Notificar via SSE
-                notificationService.sendDataUpdateNotification(
-                    String.format("Busca manual: importados %d registros", savedData.size()),
-                    savedData.size()
-                );
+                String successMessage = messageService.getSSEMessage("external.data.fetched", savedData.size());
+                notificationService.sendDataUpdateNotification(successMessage, savedData.size());
                 
                 return savedData;
             }
@@ -143,10 +158,11 @@ public class ExternalDataService {
             return new ArrayList<>();
             
         } catch (Exception e) {
-            logger.error("Erro na busca manual de dados externos: {}", e.getMessage(), e);
+            String errorMessage = messageService.getMessage("external.data.fetch.error", e.getMessage());
+            log.error(errorMessage, e);
             
             notificationService.sendErrorNotification(
-                "Erro na busca manual de dados externos",
+                messageService.getMessage("external.data.fetch.error", "Erro na busca manual de dados externos"),
                 e.getMessage()
             );
             

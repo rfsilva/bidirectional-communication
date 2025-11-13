@@ -2,72 +2,92 @@ package com.example.ssedemo.service;
 
 import com.example.ssedemo.model.NotificationMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Serviço para gerenciamento de notificações Server-Sent Events.
+ * Utiliza Lombok para reduzir boilerplate code.
+ */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class SSENotificationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(SSENotificationService.class);
     private final Set<SseEmitter> emitters = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
+    private final MessageService messageService;
 
+    /**
+     * Cria um novo emitter SSE e o registra na lista de conexões ativas.
+     *
+     * @return Novo SseEmitter configurado
+     */
     public SseEmitter createEmitter() {
         SseEmitter emitter = new SseEmitter(0L); // Timeout infinito
         
         emitter.onCompletion(() -> {
-            logger.info("SSE connection completed");
+            String completionMessage = messageService.getSSEMessage("connection.completed", "SSE connection completed");
+            log.info(completionMessage);
             emitters.remove(emitter);
         });
         
         emitter.onTimeout(() -> {
-            logger.info("SSE connection timed out");
+            String timeoutMessage = messageService.getSSEMessage("connection.timeout", "SSE connection timed out");
+            log.info(timeoutMessage);
             emitters.remove(emitter);
         });
         
         emitter.onError((ex) -> {
-            logger.error("SSE connection error: {}", ex.getMessage());
+            String errorMessage = messageService.getSSEMessage("connection.error", "SSE connection error: {0}");
+            log.error(errorMessage, ex.getMessage());
             emitters.remove(emitter);
         });
 
         emitters.add(emitter);
-        logger.info("New SSE connection established. Total connections: {}", emitters.size());
+        log.info("Nova conexão SSE estabelecida. Total de conexões: {}", emitters.size());
 
         // Enviar mensagem de boas-vindas
         try {
-            NotificationMessage welcomeMessage = new NotificationMessage(
+            String welcomeMessage = messageService.getSSEMessage("connection.established");
+            NotificationMessage notification = new NotificationMessage(
                 "CONNECTION", 
-                "Conectado ao stream de notificações"
+                welcomeMessage
             );
             emitter.send(SseEmitter.event()
                 .name("connection")
-                .data(objectMapper.writeValueAsString(welcomeMessage))
+                .data(objectMapper.writeValueAsString(notification))
                 .id(String.valueOf(System.currentTimeMillis())));
         } catch (IOException e) {
-            logger.error("Error sending welcome message: {}", e.getMessage());
+            log.error("Erro ao enviar mensagem de boas-vindas: {}", e.getMessage());
             emitters.remove(emitter);
         }
 
         return emitter;
     }
 
+    /**
+     * Envia uma notificação para todas as conexões SSE ativas.
+     *
+     * @param eventName Nome do evento
+     * @param message Mensagem de notificação
+     */
     public void sendNotificationToAll(String eventName, NotificationMessage message) {
         if (emitters.isEmpty()) {
-            logger.debug("No SSE connections available to send notification");
+            log.debug("Nenhuma conexão SSE disponível para enviar notificação");
             return;
         }
 
-        logger.info("Sending notification to {} connections: {}", emitters.size(), message.getType());
+        log.info("Enviando notificação para {} conexões: {}", emitters.size(), message.getType());
 
         emitters.removeIf(emitter -> {
             try {
@@ -76,40 +96,57 @@ public class SSENotificationService {
                     .name(eventName)
                     .data(jsonData)
                     .id(String.valueOf(System.currentTimeMillis())));
-                return false; // Keep emitter
+                return false; // Manter emitter
             } catch (IOException e) {
-                logger.warn("Failed to send notification to client: {}", e.getMessage());
-                return true; // Remove emitter
+                log.warn("Falha ao enviar notificação para cliente: {}", e.getMessage());
+                return true; // Remover emitter
             }
         });
 
-        logger.info("Notification sent. Active connections: {}", emitters.size());
+        log.info("Notificação enviada. Conexões ativas: {}", emitters.size());
     }
 
+    /**
+     * Envia uma notificação de atualização de dados.
+     *
+     * @param message Mensagem da notificação
+     * @param count Quantidade de registros afetados
+     */
     public void sendDataUpdateNotification(String message, int count) {
         NotificationMessage notification = new NotificationMessage(
             "DATA_UPDATE",
             message,
-            java.util.Map.of(
+            Map.of(
                 "count", count,
-                "timestamp", java.time.LocalDateTime.now()
+                "timestamp", LocalDateTime.now()
             )
         );
         sendNotificationToAll("dataUpdate", notification);
     }
 
+    /**
+     * Envia uma notificação de erro.
+     *
+     * @param message Mensagem de erro
+     * @param error Detalhes do erro
+     */
     public void sendErrorNotification(String message, String error) {
         NotificationMessage notification = new NotificationMessage(
             "ERROR",
             message,
-            java.util.Map.of(
+            Map.of(
                 "error", error,
-                "timestamp", java.time.LocalDateTime.now()
+                "timestamp", LocalDateTime.now()
             )
         );
         sendNotificationToAll("error", notification);
     }
 
+    /**
+     * Envia uma notificação informativa.
+     *
+     * @param message Mensagem informativa
+     */
     public void sendInfoNotification(String message) {
         NotificationMessage notification = new NotificationMessage(
             "INFO",
@@ -118,6 +155,11 @@ public class SSENotificationService {
         sendNotificationToAll("info", notification);
     }
 
+    /**
+     * Obtém o número de conexões SSE ativas.
+     *
+     * @return Número de conexões ativas
+     */
     public int getActiveConnectionsCount() {
         return emitters.size();
     }

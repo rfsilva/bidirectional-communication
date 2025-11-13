@@ -4,10 +4,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
+/**
+ * Entidade de dados que pode ser interna ou externa.
+ * Utiliza Lombok para reduzir boilerplate code.
+ */
 @Entity
 @Table(name = "data_entities")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "Entidade de dados que pode ser interna ou externa")
 public class DataEntity {
 
@@ -16,14 +27,14 @@ public class DataEntity {
     @Schema(description = "ID único do registro", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
 
-    @NotBlank(message = "Nome é obrigatório")
-    @Size(max = 100, message = "Nome deve ter no máximo 100 caracteres")
+    @NotBlank(message = "{validation.name.required}")
+    @Size(max = 100, message = "{validation.name.size}")
     @Column(nullable = false, length = 100)
     @Schema(description = "Nome do item de dados", example = "Produto A - 14:30:15", required = true, maxLength = 100)
     private String name;
 
-    @NotBlank(message = "Valor é obrigatório")
-    @Size(max = 255, message = "Valor deve ter no máximo 255 caracteres")
+    @NotBlank(message = "{validation.value.required}")
+    @Size(max = 255, message = "{validation.value.size}")
     @Column(name = "data_value", nullable = false)
     @Schema(description = "Valor ou descrição do item", example = "Disponível (Externo)", required = true, maxLength = 255)
     private String value;
@@ -40,82 +51,53 @@ public class DataEntity {
     @Schema(description = "Indica se o dado é de origem externa (true) ou interna (false)", example = "true", defaultValue = "false")
     private Boolean isExternal = false;
 
-    public DataEntity() {
-        this.createdAt = LocalDateTime.now();
-    }
-
+    /**
+     * Construtor para criar uma entidade com nome e valor.
+     *
+     * @param name Nome do item
+     * @param value Valor do item
+     */
     public DataEntity(String name, String value) {
-        this();
         this.name = name;
         this.value = value;
+        this.createdAt = LocalDateTime.now();
+        this.isExternal = false;
     }
 
+    /**
+     * Construtor para criar uma entidade com nome, valor e flag externa.
+     *
+     * @param name Nome do item
+     * @param value Valor do item
+     * @param isExternal Flag indicando se é externo
+     */
     public DataEntity(String name, String value, Boolean isExternal) {
-        this(name, value);
-        this.isExternal = isExternal;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
         this.name = name;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
         this.value = value;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    public Boolean getIsExternal() {
-        return isExternal;
-    }
-
-    public void setIsExternal(Boolean isExternal) {
+        this.createdAt = LocalDateTime.now();
         this.isExternal = isExternal;
     }
 
+    /**
+     * Método executado antes de persistir a entidade.
+     * Define a data de criação se não estiver definida.
+     */
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+        if (this.isExternal == null) {
+            this.isExternal = false;
+        }
+    }
+
+    /**
+     * Método executado antes de atualizar a entidade.
+     * Atualiza a data de modificação.
+     */
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    @Override
-    public String toString() {
-        return "DataEntity{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", value='" + value + '\'' +
-                ", createdAt=" + createdAt +
-                ", isExternal=" + isExternal +
-                '}';
     }
 }

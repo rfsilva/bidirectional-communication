@@ -19,6 +19,60 @@
     </div>
   </div>
 
+  <!-- I18N Info -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-info">
+        <div class="card-header bg-info text-white">
+          <h6 class="mb-0">🌍 Informações de Internacionalização (I18N)</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="d-flex align-items-center mb-2">
+                <span class="me-2" style="font-size: 1.5em;">{{ languageFlag }}</span>
+                <div>
+                  <strong>Idioma Atual:</strong> {{ languageName }} ({{ currentLanguage }})
+                </div>
+              </div>
+              <small><strong>Comportamento:</strong> Backend padrão em inglês</small><br>
+              <small><strong>Frontend solicita:</strong> Português via ?lang=pt</small><br>
+              <small><strong>Interceptor:</strong> ✅ Ativo (adiciona ?lang=pt automaticamente)</small>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-2">
+                <strong>Idiomas Disponíveis:</strong>
+                <div class="mt-1">
+                  <button 
+                    *ngFor="let lang of availableLanguages" 
+                    class="btn btn-sm me-1 mb-1"
+                    [class.btn-primary]="lang.code === currentLanguage"
+                    [class.btn-outline-secondary]="lang.code !== currentLanguage"
+                    (click)="changeLanguage(lang.code)">
+                    {{ lang.flag }} {{ lang.code.toUpperCase() }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-2">
+            <button class="btn btn-sm btn-outline-info me-2" (click)="testI18nMessages()">
+              🧪 Testar Mensagens I18N
+            </button>
+            <small class="text-muted">
+              <strong>Nota:</strong> Todas as requisições para /api/ incluem automaticamente ?lang={{ currentLanguage }}
+            </small>
+          </div>
+          <div class="mt-2" *ngIf="i18nInfo">
+            <small class="text-muted">
+              <strong>Exemplo atual:</strong> {{ i18nInfo.sampleMessage }}
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Debug Info -->
   <div class="row mb-4">
     <div class="col-12">
@@ -102,7 +156,7 @@
       <!-- Action Buttons -->
       <div class="card mb-4">
         <div class="card-header">
-          <h5 class="mb-0">Ações</h5>
+          <h5 class="mb-0">Ações (Mensagens em Português via ?lang=pt)</h5>
         </div>
         <div class="card-body">
           <div class="row g-2">
@@ -127,6 +181,11 @@
                 Reconectar SSE
               </button>
             </div>
+          </div>
+          <div class="mt-2">
+            <small class="text-muted">
+              💡 <strong>Dica:</strong> Todas as ações acima enviarão requisições com ?lang={{ currentLanguage }} automaticamente
+            </small>
           </div>
         </div>
       </div>
@@ -271,6 +330,11 @@
             <div class="mb-3">🔔</div>
             <p>Nenhuma notificação ainda</p>
             <small>As notificações aparecerão aqui em tempo real</small>
+            <div class="mt-2">
+              <small class="text-info">
+                💬 Mensagens virão em {{ languageName }} ({{ currentLanguage }})
+              </small>
+            </div>
           </div>
 
           <!-- Notifications List -->
