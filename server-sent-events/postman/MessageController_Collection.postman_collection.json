@@ -1,0 +1,968 @@
+{
+	"info": {
+		"_postman_id": "message-controller-collection-001",
+		"name": "MessageController - API Collection",
+		"description": "Collection para testar os endpoints do MessageController do SSE Demo.\n\nEsta collection inclui:\n- Operações CRUD de mensagens\n- Controle de acesso baseado em roles\n- Marcação de leitura/não leitura\n- Estatísticas de mensagens\n- Busca de mensagens externas\n\n**Pré-requisitos:**\n1. Use o environment 'SSE Demo - Local Development'\n2. Execute primeiro o login para obter o token de autenticação\n3. O sistema deve estar rodando em http://localhost:8080\n\n**Roles e Permissões:**\n- ADMIN: Acesso total a todas as mensagens\n- EDITOR/VIEWER: Acesso apenas às próprias mensagens",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login as Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('authToken', response.token);",
+									"    pm.environment.set('currentUserId', response.user.id);",
+									"    console.log('Admin login successful. Token saved.');",
+									"    console.log('User ID:', response.user.id);",
+									"} else {",
+									"    console.log('Login failed:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"{{adminUsername}}\",\n    \"password\": \"{{adminPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Editor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('authToken', response.token);",
+									"    pm.environment.set('currentUserId', response.user.id);",
+									"    console.log('Editor login successful. Token saved.');",
+									"    console.log('User ID:', response.user.id);",
+									"} else {",
+									"    console.log('Login failed:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"{{editorUsername}}\",\n    \"password\": \"{{editorPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Viewer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('authToken', response.token);",
+									"    pm.environment.set('currentUserId', response.user.id);",
+									"    console.log('Viewer login successful. Token saved.');",
+									"    console.log('User ID:', response.user.id);",
+									"} else {",
+									"    console.log('Login failed:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"{{viewerUsername}}\",\n    \"password\": \"{{viewerPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticação para obter tokens de acesso com diferentes roles."
+		},
+		{
+			"name": "Message Operations",
+			"item": [
+				{
+					"name": "Get All Messages",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const messages = pm.response.json();",
+									"    console.log(`Found ${messages.length} messages`);",
+									"    ",
+									"    if (messages.length > 0) {",
+									"        pm.environment.set('testMessageId', messages[0].id);",
+									"        console.log('Saved first message ID:', messages[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Message by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Response has message structure', function () {",
+									"        const message = pm.response.json();",
+									"        pm.expect(message).to.have.property('id');",
+									"        pm.expect(message).to.have.property('title');",
+									"        pm.expect(message).to.have.property('content');",
+									"        pm.expect(message).to.have.property('type');",
+									"        pm.expect(message).to.have.property('priority');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/{{testMessageId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"{{testMessageId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Messages by User ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 or 403', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Response is an array', function () {",
+									"        const response = pm.response.json();",
+									"        pm.expect(response).to.be.an('array');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/user/{{currentUserId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"user",
+								"{{currentUserId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Unread Messages",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const unreadMessages = pm.response.json();",
+									"    console.log(`Found ${unreadMessages.length} unread messages`);",
+									"    ",
+									"    // Verify all messages are unread",
+									"    unreadMessages.forEach(message => {",
+									"        pm.expect(message.isRead).to.be.false;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/unread",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"unread"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    pm.test('Response has message structure', function () {",
+									"        const message = pm.response.json();",
+									"        pm.expect(message).to.have.property('id');",
+									"        pm.expect(message).to.have.property('title');",
+									"        pm.expect(message).to.have.property('content');",
+									"        pm.expect(message).to.have.property('type');",
+									"        pm.expect(message).to.have.property('priority');",
+									"        pm.expect(message.isRead).to.be.false;",
+									"    });",
+									"    ",
+									"    const newMessage = pm.response.json();",
+									"    pm.environment.set('createdMessageId', newMessage.id);",
+									"    console.log('Created message ID:', newMessage.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": {{currentUserId}},\n    \"title\": \"Mensagem de Teste\",\n    \"content\": \"Esta é uma mensagem de teste criada via Postman\",\n    \"type\": \"INFO\",\n    \"priority\": \"NORMAL\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/messages",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create High Priority Warning Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    const message = pm.response.json();",
+									"    pm.test('Message has correct type and priority', function () {",
+									"        pm.expect(message.type).to.eql('WARNING');",
+									"        pm.expect(message.priority).to.eql('HIGH');",
+									"    });",
+									"    ",
+									"    pm.environment.set('warningMessageId', message.id);",
+									"    console.log('Created warning message ID:', message.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": {{currentUserId}},\n    \"title\": \"Aviso Importante\",\n    \"content\": \"Este é um aviso de alta prioridade que requer atenção imediata\",\n    \"type\": \"WARNING\",\n    \"priority\": \"HIGH\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/messages",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Message was updated', function () {",
+									"        const message = pm.response.json();",
+									"        pm.expect(message.title).to.include('Atualizada');",
+									"        pm.expect(message.type).to.eql('SUCCESS');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Mensagem de Teste - Atualizada\",\n    \"content\": \"Esta mensagem foi atualizada via Postman com novo conteúdo\",\n    \"type\": \"SUCCESS\",\n    \"priority\": \"HIGH\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/messages/{{createdMessageId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"{{createdMessageId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Operações CRUD básicas para mensagens."
+		},
+		{
+			"name": "Message Status Operations",
+			"item": [
+				{
+					"name": "Mark Message as Read",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Message is marked as read', function () {",
+									"        const message = pm.response.json();",
+									"        pm.expect(message.isRead).to.be.true;",
+									"        pm.expect(message.readAt).to.not.be.null;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/{{createdMessageId}}/read",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"{{createdMessageId}}",
+								"read"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark Message as Unread",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Message is marked as unread', function () {",
+									"        const message = pm.response.json();",
+									"        pm.expect(message.isRead).to.be.false;",
+									"        pm.expect(message.readAt).to.be.null;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/{{createdMessageId}}/unread",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"{{createdMessageId}}",
+								"unread"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mark All Messages as Read",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response contains marked count', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('message');",
+									"    pm.expect(response).to.have.property('markedCount');",
+									"    console.log(`Marked ${response.markedCount} messages as read`);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/mark-all-read",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"mark-all-read"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Operações para marcar mensagens como lidas ou não lidas."
+		},
+		{
+			"name": "Statistics",
+			"item": [
+				{
+					"name": "Get User Message Stats",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has stats structure', function () {",
+									"    const stats = pm.response.json();",
+									"    pm.expect(stats).to.have.property('totalMessages');",
+									"    pm.expect(stats).to.have.property('unreadMessages');",
+									"    pm.expect(stats).to.have.property('readMessages');",
+									"    ",
+									"    console.log('User Message Stats:');",
+									"    console.log('- Total:', stats.totalMessages);",
+									"    console.log('- Unread:', stats.unreadMessages);",
+									"    console.log('- Read:', stats.readMessages);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/stats",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"stats"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Admin Message Stats (ADMIN only)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 or 403', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Response has admin stats structure', function () {",
+									"        const stats = pm.response.json();",
+									"        pm.expect(stats).to.have.property('totalMessages');",
+									"        pm.expect(stats).to.have.property('totalUsers');",
+									"        ",
+									"        console.log('Admin Message Stats:');",
+									"        console.log('- Total Messages:', stats.totalMessages);",
+									"        console.log('- Total Users:', stats.totalUsers);",
+									"    });",
+									"} else if (pm.response.code === 403) {",
+									"    console.log('Access denied - ADMIN role required');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/stats/admin",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"stats",
+								"admin"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para obter estatísticas de mensagens."
+		},
+		{
+			"name": "External Messages (ADMIN only)",
+			"item": [
+				{
+					"name": "Force External Message Fetch",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 or 403', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 403, 500]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Response has success structure', function () {",
+									"        const response = pm.response.json();",
+									"        pm.expect(response).to.have.property('status');",
+									"        pm.expect(response).to.have.property('message');",
+									"        pm.expect(response).to.have.property('messagesImported');",
+									"        pm.expect(response.status).to.eql('success');",
+									"        ",
+									"        console.log(`External fetch completed. Imported ${response.messagesImported} messages`);",
+									"    });",
+									"} else if (pm.response.code === 403) {",
+									"    console.log('Access denied - ADMIN role required');",
+									"} else if (pm.response.code === 500) {",
+									"    console.log('Server error during external fetch');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/external/force-fetch",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"external",
+								"force-fetch"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gerenciar mensagens de sistemas externos (apenas ADMIN)."
+		},
+		{
+			"name": "Cleanup",
+			"item": [
+				{
+					"name": "Delete Created Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 204 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 204) {",
+									"    console.log('Message deleted successfully');",
+									"} else if (pm.response.code === 404) {",
+									"    console.log('Message not found (may have been already deleted)');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/{{createdMessageId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"{{createdMessageId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Warning Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 204 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 204) {",
+									"    console.log('Warning message deleted successfully');",
+									"} else if (pm.response.code === 404) {",
+									"    console.log('Warning message not found (may have been already deleted)');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/messages/{{warningMessageId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"messages",
+								"{{warningMessageId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Requests para limpar dados de teste criados durante os testes."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Verificar se o token está presente",
+					"if (!pm.environment.get('authToken')) {",
+					"    console.log('⚠️  Token não encontrado. Execute primeiro o login.');",
+					"}",
+					"",
+					"// Log da requisição atual",
+					"console.log(`🚀 Executando: ${pm.info.requestName}`);",
+					"console.log(`📍 URL: ${pm.request.url}`);",
+					"console.log(`🔑 User ID: ${pm.environment.get('currentUserId')}`);",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Log do resultado",
+					"console.log(`✅ ${pm.info.requestName} - Status: ${pm.response.code}`);",
+					"",
+					"// Verificar se a resposta é JSON válido",
+					"if (pm.response.headers.get('Content-Type') && pm.response.headers.get('Content-Type').includes('application/json')) {",
+					"    try {",
+					"        const response = pm.response.json();",
+					"        console.log('📄 Response type:', typeof response);",
+					"    } catch (e) {",
+					"        console.log('❌ Invalid JSON response');",
+					"    }",
+					"}",
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "testMessageId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "createdMessageId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "warningMessageId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

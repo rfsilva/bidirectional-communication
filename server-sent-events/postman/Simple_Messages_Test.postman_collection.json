@@ -1,0 +1,343 @@
+{
+	"info": {
+		"_postman_id": "simple-messages-test-002",
+		"name": "Simple Messages Test - DTOs",
+		"description": "Collection simples para testar os endpoints de mensagens com DTOs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Login Admin",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const response = pm.response.json();",
+							"    pm.environment.set('authToken', response.token);",
+							"    pm.environment.set('currentUserId', response.user.id);",
+							"    console.log('✅ Login successful');",
+							"    console.log('Token:', response.token.substring(0, 20) + '...');",
+							"    console.log('User ID:', response.user.id);",
+							"    console.log('Role:', response.user.role);",
+							"} else {",
+							"    console.log('❌ Login failed:', pm.response.text());",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"login\": \"admin\",\n    \"password\": \"admin123\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Test Health (with token)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"console.log('Health endpoint status:', pm.response.code);",
+							"if (pm.response.code === 200) {",
+							"    console.log('✅ Health endpoint working with token');",
+							"} else {",
+							"    console.log('❌ Health endpoint failed');",
+							"    console.log('Response:', pm.response.text());",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Get All Messages (DTOs)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"console.log('Messages endpoint status:', pm.response.code);",
+							"console.log('Response headers:', JSON.stringify(pm.response.headers.toObject()));",
+							"",
+							"if (pm.response.code === 200) {",
+							"    const messages = pm.response.json();",
+							"    console.log('✅ Messages endpoint working with DTOs');",
+							"    console.log('Found', messages.length, 'messages');",
+							"    if (messages.length > 0) {",
+							"        console.log('First message DTO structure:');",
+							"        console.log('- ID:', messages[0].id);",
+							"        console.log('- Title:', messages[0].title);",
+							"        console.log('- Type:', messages[0].type);",
+							"        console.log('- UserId:', messages[0].userId);",
+							"        console.log('- Username:', messages[0].username);",
+							"        console.log('- UserFullName:', messages[0].userFullName);",
+							"        pm.environment.set('testMessageId', messages[0].id);",
+							"    }",
+							"} else {",
+							"    console.log('❌ Messages endpoint failed');",
+							"    console.log('Response body:', pm.response.text());",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/messages",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"messages"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Get Message Stats (DTOs)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"console.log('Stats endpoint status:', pm.response.code);",
+							"",
+							"if (pm.response.code === 200) {",
+							"    const stats = pm.response.json();",
+							"    console.log('✅ Stats endpoint working with DTOs');",
+							"    console.log('Stats DTO structure:');",
+							"    console.log('- Total Messages:', stats.totalMessages);",
+							"    console.log('- Unread Messages:', stats.unreadMessages);",
+							"    console.log('- Read Messages:', stats.readMessages);",
+							"    console.log('- Info Messages:', stats.infoMessages);",
+							"    console.log('- Success Messages:', stats.successMessages);",
+							"    console.log('- Warning Messages:', stats.warningMessages);",
+							"    console.log('- Error Messages:', stats.errorMessages);",
+							"} else {",
+							"    console.log('❌ Stats endpoint failed');",
+							"    console.log('Response body:', pm.response.text());",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/messages/stats",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"messages",
+						"stats"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Create Message (DTOs)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"console.log('Create message status:', pm.response.code);",
+							"",
+							"if (pm.response.code === 201) {",
+							"    const message = pm.response.json();",
+							"    console.log('✅ Message created successfully with DTOs');",
+							"    console.log('Created message DTO structure:');",
+							"    console.log('- ID:', message.id);",
+							"    console.log('- Title:', message.title);",
+							"    console.log('- Content:', message.content);",
+							"    console.log('- Type:', message.type);",
+							"    console.log('- Priority:', message.priority);",
+							"    console.log('- UserId:', message.userId);",
+							"    console.log('- Username:', message.username);",
+							"    console.log('- IsRead:', message.isRead);",
+							"    pm.environment.set('createdMessageId', message.id);",
+							"} else {",
+							"    console.log('❌ Message creation failed');",
+							"    console.log('Response body:', pm.response.text());",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userId\": {{currentUserId}},\n    \"title\": \"Teste DTOs\",\n    \"content\": \"Esta é uma mensagem de teste usando DTOs\",\n    \"type\": \"INFO\",\n    \"priority\": \"NORMAL\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/messages",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"messages"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Get Message by ID (DTOs)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"console.log('Get message by ID status:', pm.response.code);",
+							"",
+							"if (pm.response.code === 200) {",
+							"    const message = pm.response.json();",
+							"    console.log('✅ Get message by ID working with DTOs');",
+							"    console.log('Message DTO:', JSON.stringify(message, null, 2));",
+							"} else if (pm.response.code === 404) {",
+							"    console.log('⚠️ Message not found');",
+							"} else {",
+							"    console.log('❌ Get message by ID failed');",
+							"    console.log('Response body:', pm.response.text());",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{authToken}}"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/messages/{{createdMessageId}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"messages",
+						"{{createdMessageId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"console.log('🚀 Executando:', pm.info.requestName);",
+					"console.log('Token presente:', pm.environment.get('authToken') ? 'SIM' : 'NÃO');"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"console.log('📊 Resultado:', pm.info.requestName, '- Status:', pm.response.code);"
+				]
+			}
+		}
+	]
+}
