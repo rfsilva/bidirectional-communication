@@ -24,6 +24,9 @@ import { UserInfo } from './models/auth.model';
                 <a class="nav-link" [routerLink]="['/dashboard']" routerLinkActive="active">
                   <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                 </a>
+                <a class="nav-link" [routerLink]="['/messages']" routerLinkActive="active">
+                  <i class="fas fa-envelope me-1"></i>Mensagens
+                </a>
                 <a class="nav-link" [routerLink]="['/profile']" routerLinkActive="active">
                   <i class="fas fa-user me-1"></i>Perfil
                 </a>

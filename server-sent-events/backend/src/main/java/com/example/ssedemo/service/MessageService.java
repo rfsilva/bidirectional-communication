@@ -1,6 +1,7 @@
 package com.example.ssedemo.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -8,158 +9,107 @@ import org.springframework.stereotype.Service;
 import java.util.Locale;
 
 /**
- * Serviço para gerenciar mensagens internacionalizadas.
- * Facilita o acesso às mensagens traduzidas em diferentes idiomas.
+ * Serviço para gerenciamento de mensagens de internacionalização (i18n).
+ * Fornece métodos convenientes para obter mensagens traduzidas.
  */
-@Service
+@Service("messageService")
 @RequiredArgsConstructor
+@Slf4j
 public class MessageService {
 
     private final MessageSource messageSource;
 
     /**
-     * Obtém uma mensagem traduzida usando o locale atual.
-     *
-     * @param key Chave da mensagem
-     * @return Mensagem traduzida
-     */
-    public String getMessage(String key) {
-        return getMessage(key, (Object[]) null);
-    }
-
-    /**
-     * Obtém uma mensagem traduzida com parâmetros usando o locale atual.
-     *
-     * @param key Chave da mensagem
-     * @param args Argumentos para substituição na mensagem
-     * @return Mensagem traduzida com parâmetros substituídos
-     */
-    public String getMessage(String key, Object... args) {
-        return getMessage(key, LocaleContextHolder.getLocale(), args);
-    }
-
-    /**
-     * Obtém uma mensagem traduzida para um locale específico.
-     *
-     * @param key Chave da mensagem
-     * @param locale Locale desejado
-     * @param args Argumentos para substituição na mensagem
-     * @return Mensagem traduzida
-     */
-    public String getMessage(String key, Locale locale, Object... args) {
-        try {
-            return messageSource.getMessage(key, args, locale);
-        } catch (Exception e) {
-            // Fallback para a chave se a mensagem não for encontrada
-            return key;
-        }
-    }
-
-    /**
-     * Obtém uma mensagem de validação.
-     *
-     * @param field Campo que falhou na validação
-     * @param validationType Tipo de validação (required, size, etc.)
-     * @param args Argumentos adicionais
-     * @return Mensagem de validação traduzida
-     */
-    public String getValidationMessage(String field, String validationType, Object... args) {
-        String key = String.format("validation.%s.%s", field, validationType);
-        return getMessage(key, args);
-    }
-
-    /**
-     * Obtém uma mensagem de sucesso.
-     *
-     * @param operation Operação realizada (created, updated, deleted)
-     * @param args Argumentos adicionais
-     * @return Mensagem de sucesso traduzida
-     */
-    public String getSuccessMessage(String operation, Object... args) {
-        String key = String.format("data.%s.success", operation);
-        return getMessage(key, args);
-    }
-
-    /**
-     * Obtém uma mensagem de erro.
-     *
-     * @param errorType Tipo do erro
-     * @param args Argumentos adicionais
-     * @return Mensagem de erro traduzida
-     */
-    public String getErrorMessage(String errorType, Object... args) {
-        String key = String.format("error.%s", errorType);
-        return getMessage(key, args);
-    }
-
-    /**
-     * Obtém uma mensagem informativa.
-     *
-     * @param infoType Tipo da informação
-     * @param args Argumentos adicionais
-     * @return Mensagem informativa traduzida
-     */
-    public String getInfoMessage(String infoType, Object... args) {
-        String key = String.format("info.%s", infoType);
-        return getMessage(key, args);
-    }
-
-    /**
-     * Obtém uma mensagem SSE.
-     *
-     * @param sseType Tipo da mensagem SSE
-     * @param args Argumentos adicionais
-     * @return Mensagem SSE traduzida
-     */
-    public String getSSEMessage(String sseType, Object... args) {
-        String key = String.format("sse.%s", sseType);
-        return getMessage(key, args);
-    }
-
-    /**
-     * Obtém o locale atual.
-     *
-     * @return Locale atual
+     * Obtém o locale atual do contexto.
      */
     public Locale getCurrentLocale() {
         return LocaleContextHolder.getLocale();
     }
 
-    // Métodos de conveniência para casos comuns
+    /**
+     * Obtém uma mensagem simples sem argumentos.
+     */
+    public String getMessage(String key) {
+        return getMessage(key, getCurrentLocale());
+    }
 
     /**
-     * Obtém uma mensagem com um único parâmetro.
-     *
-     * @param key Chave da mensagem
-     * @param arg Argumento único
-     * @return Mensagem traduzida
+     * Obtém uma mensagem com um argumento.
      */
     public String getMessage(String key, Object arg) {
-        return getMessage(key, new Object[]{arg});
+        return getMessage(key, getCurrentLocale(), arg);
     }
 
     /**
-     * Obtém uma mensagem com dois parâmetros.
-     *
-     * @param key Chave da mensagem
-     * @param arg1 Primeiro argumento
-     * @param arg2 Segundo argumento
-     * @return Mensagem traduzida
+     * Obtém uma mensagem com dois argumentos.
      */
     public String getMessage(String key, Object arg1, Object arg2) {
-        return getMessage(key, new Object[]{arg1, arg2});
+        return getMessage(key, getCurrentLocale(), arg1, arg2);
     }
 
     /**
-     * Obtém uma mensagem com três parâmetros.
-     *
-     * @param key Chave da mensagem
-     * @param arg1 Primeiro argumento
-     * @param arg2 Segundo argumento
-     * @param arg3 Terceiro argumento
-     * @return Mensagem traduzida
+     * Obtém uma mensagem com três argumentos.
      */
     public String getMessage(String key, Object arg1, Object arg2, Object arg3) {
-        return getMessage(key, new Object[]{arg1, arg2, arg3});
+        return getMessage(key, getCurrentLocale(), arg1, arg2, arg3);
+    }
+
+    /**
+     * Obtém uma mensagem com múltiplos argumentos.
+     */
+    public String getMessage(String key, Object... args) {
+        return getMessage(key, getCurrentLocale(), args);
+    }
+
+    /**
+     * Obtém uma mensagem com locale específico e argumentos.
+     */
+    public String getMessage(String key, Locale locale, Object... args) {
+        try {
+            return messageSource.getMessage(key, args, locale);
+        } catch (Exception e) {
+            log.warn("Mensagem não encontrada para chave '{}' no locale '{}': {}", key, locale, e.getMessage());
+            return key; // Retorna a chave se não encontrar a mensagem
+        }
+    }
+
+    /**
+     * Obtém mensagem de sucesso com argumentos.
+     */
+    public String getSuccessMessage(String operation, Object... args) {
+        String key = "success." + operation;
+        return getMessage(key, args);
+    }
+
+    /**
+     * Obtém mensagem de erro com argumentos.
+     */
+    public String getErrorMessage(String errorType, Object... args) {
+        String key = "error." + errorType;
+        return getMessage(key, args);
+    }
+
+    /**
+     * Obtém mensagem informativa com argumentos.
+     */
+    public String getInfoMessage(String infoType, Object... args) {
+        String key = "info." + infoType;
+        return getMessage(key, args);
+    }
+
+    /**
+     * Obtém mensagem de validação com argumentos.
+     */
+    public String getValidationMessage(String field, String validationType, Object... args) {
+        String key = "validation." + field + "." + validationType;
+        return getMessage(key, args);
+    }
+
+    /**
+     * Obtém mensagem para SSE com argumentos.
+     */
+    public String getSSEMessage(String sseType, Object... args) {
+        String key = "sse." + sseType;
+        return getMessage(key, args);
     }
 }

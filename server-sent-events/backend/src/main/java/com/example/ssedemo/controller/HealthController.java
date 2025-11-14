@@ -41,7 +41,7 @@ public class HealthController {
                             "timestamp": "2024-01-15T10:30:00",
                             "service": "SSE Demo Backend",
                             "version": "1.0.0",
-                            "message": "Service is running"
+                            "userMessage": "Service is running"
                         }
                         """)))
     })
@@ -54,7 +54,7 @@ public class HealthController {
             "timestamp", LocalDateTime.now(),
             "service", "SSE Demo Backend",
             "version", "1.0.0",
-            "message", statusMessage,
+            "userMessage", statusMessage,
             "locale", messageService.getCurrentLocale().toString()
         ));
     }

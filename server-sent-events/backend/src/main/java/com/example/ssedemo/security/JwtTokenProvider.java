@@ -36,15 +36,16 @@ public class JwtTokenProvider {
     public String generateToken(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         
-        Date expiryDate = new Date(System.currentTimeMillis() + jwtExpirationInMs);
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
                 .subject(user.getUsername())
                 .claim("userId", user.getId())
                 .claim("email", user.getEmail())
-                .claim("role", user.getRole().name())
+                .claim("role", "ROLE_" + user.getRole().name()) // Adiciona prefixo ROLE_
                 .claim("fullName", user.getFullName())
-                .issuedAt(new Date())
+                .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(jwtSecret)
                 .compact();
@@ -54,15 +55,16 @@ public class JwtTokenProvider {
      * Gera token JWT para um usuário específico.
      */
     public String generateTokenForUser(User user) {
-        Date expiryDate = new Date(System.currentTimeMillis() + jwtExpirationInMs);
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
                 .subject(user.getUsername())
                 .claim("userId", user.getId())
                 .claim("email", user.getEmail())
-                .claim("role", user.getRole().name())
+                .claim("role", "ROLE_" + user.getRole().name()) // Adiciona prefixo ROLE_
                 .claim("fullName", user.getFullName())
-                .issuedAt(new Date())
+                .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(jwtSecret)
                 .compact();

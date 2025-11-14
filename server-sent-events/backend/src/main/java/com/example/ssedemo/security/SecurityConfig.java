@@ -85,6 +85,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/data/**").hasAnyRole("ADMIN", "EDITOR")
                 .requestMatchers(HttpMethod.DELETE, "/api/data/**").hasAnyRole("ADMIN", "EDITOR")
                 
+                // Mensagens - todos autenticados podem acessar (controle de acesso no service)
+                .requestMatchers("/api/messages/**").authenticated()
+                
                 // SSE - todos autenticados podem ver status, ADMIN/EDITOR podem gerenciar
                 .requestMatchers(HttpMethod.GET, "/api/sse/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/sse/**").hasAnyRole("ADMIN", "EDITOR")

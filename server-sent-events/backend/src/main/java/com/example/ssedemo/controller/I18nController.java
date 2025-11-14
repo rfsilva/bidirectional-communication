@@ -46,7 +46,7 @@ public class I18nController {
                         @ExampleObject(name = "English (default)", value = """
                             {
                                 "currentLocale": "en",
-                                "messages": {
+                                "userMessages": {
                                     "welcome": "Service is running",
                                     "dataCreated": "New record created: Example"
                                 }
@@ -55,7 +55,7 @@ public class I18nController {
                         @ExampleObject(name = "Portuguese (?lang=pt)", value = """
                             {
                                 "currentLocale": "pt",
-                                "messages": {
+                                "userMessages": {
                                     "welcome": "Serviço está funcionando",
                                     "dataCreated": "Novo registro criado: Exemplo"
                                 }
@@ -63,7 +63,7 @@ public class I18nController {
                             """)
                     }))
     })
-    @GetMapping("/messages")
+    @GetMapping("/userMessages")
     public ResponseEntity<Map<String, Object>> getTranslatedMessages(
             @Parameter(description = "Idioma desejado (pt, es, it). Se não informado, usa inglês.", 
                       example = "pt")
@@ -71,7 +71,7 @@ public class I18nController {
         
         Locale currentLocale = messageService.getCurrentLocale();
         
-        Map<String, String> messages = Map.of(
+        Map<String, String> userMessages = Map.of(
             "welcome", messageService.getMessage("health.status.up"),
             "dataCreated", messageService.getSuccessMessage("created", "Example"),
             "dataUpdated", messageService.getSuccessMessage("updated", "Example"),
@@ -86,7 +86,7 @@ public class I18nController {
             "language", currentLocale.getDisplayLanguage(Locale.ENGLISH),
             "requestedLang", lang != null ? lang : "default (en)",
             "behavior", "Default: English. Use ?lang=pt|es|it for other languages",
-            "messages", messages
+            "userMessages", userMessages
         ));
     }
 

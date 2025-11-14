@@ -26,6 +26,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   internalData: DataEntity[] = [];
   stats: Stats | null = null;
   
+  // NOVO: Paginação
+  currentPage = 1;
+  itemsPerPage = 12; // 12 itens por página (6 por linha x 2 linhas)
+  totalPages = 0;
+  paginatedData: DataEntity[] = [];
+  
   // Notifications
   notifications: NotificationMessage[] = [];
   unreadCount = 0;
@@ -214,6 +220,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.dataService.getAllData().subscribe({
       next: (data) => {
         this.allData = data;
+        this.updatePagination();
         this.loading = false;
       },
       error: (error) => {
@@ -233,6 +240,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.dataService.getExternalData().subscribe({
       next: (data) => {
         this.externalData = data;
+        this.updatePagination();
       },
       error: (error) => {
         console.error('Erro ao carregar dados externos:', error);
@@ -246,6 +254,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.dataService.getInternalData().subscribe({
       next: (data) => {
         this.internalData = data;
+        this.updatePagination();
       },
       error: (error) => {
         console.error('Erro ao carregar dados internos:', error);
@@ -273,6 +282,79 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const ready = this.authReady;
     
     return isAuth && hasToken && hasUser && ready;
+  }
+
+  // CORRIGIDO: Métodos de paginação (públicos)
+  updatePagination(): void {
+    const currentData = this.getCurrentData();
+    this.totalPages = Math.ceil(currentData.length / this.itemsPerPage);
+    
+    // Ajustar página atual se necessário
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = this.totalPages;
+    } else if (this.currentPage < 1) {
+      this.currentPage = 1;
+    }
+    
+    this.updatePaginatedData();
+  }
+
+  private updatePaginatedData(): void {
+    const currentData = this.getCurrentData();
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.paginatedData = currentData.slice(startIndex, endIndex);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePaginatedData();
+    }
+  }
+
+  goToFirstPage(): void {
+    this.goToPage(1);
+  }
+
+  goToLastPage(): void {
+    this.goToPage(this.totalPages);
+  }
+
+  goToPreviousPage(): void {
+    this.goToPage(this.currentPage - 1);
+  }
+
+  goToNextPage(): void {
+    this.goToPage(this.currentPage + 1);
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 5;
+    
+    if (this.totalPages <= maxVisiblePages) {
+      // Mostrar todas as páginas se forem poucas
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Mostrar páginas ao redor da atual
+      const start = Math.max(1, this.currentPage - 2);
+      const end = Math.min(this.totalPages, this.currentPage + 2);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  }
+
+  setActiveTab(tab: string): void {
+    this.activeTab = tab;
+    this.currentPage = 1; // Reset para primeira página ao trocar de aba
+    this.updatePagination();
   }
 
   createNewItem(): void {
@@ -405,10 +487,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.notificationService.clearNotifications();
   }
 
-  setActiveTab(tab: string): void {
-    this.activeTab = tab;
-  }
-
   getCurrentData(): DataEntity[] {
     switch (this.activeTab) {
       case 'external':
@@ -418,6 +496,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
       default:
         return this.allData;
     }
+  }
+
+  // NOVO: Getter para dados paginados
+  getPaginatedData(): DataEntity[] {
+    return this.paginatedData;
+  }
+
+  // CORRIGIDO: Getter para Math (para usar no template)
+  get Math(): typeof Math {
+    return Math;
+  }
+
+  // NOVO: Método para calcular o índice final da página
+  getEndIndex(): number {
+    return Math.min(this.currentPage * this.itemsPerPage, this.getCurrentData().length);
+  }
+
+  // NOVO: Método para calcular o índice inicial da página
+  getStartIndex(): number {
+    return (this.currentPage - 1) * this.itemsPerPage + 1;
   }
 
   formatDate(dateString: string): string {

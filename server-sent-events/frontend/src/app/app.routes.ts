@@ -35,6 +35,30 @@ export const routes: Routes = [
     title: 'Alterar Senha - SSE Demo'
   },
 
+  // Mensagens (todos os usuários autenticados)
+  {
+    path: 'messages',
+    loadComponent: () => import('./components/messages/message-list.component').then(m => m.MessageListComponent),
+    canActivate: [AuthGuard],
+    title: 'Mensagens - SSE Demo'
+  },
+
+  // Criar mensagem (todos os usuários autenticados, mas com restrições no backend)
+  {
+    path: 'messages/new',
+    loadComponent: () => import('./components/messages/message-form.component').then(m => m.MessageFormComponent),
+    canActivate: [AuthGuard],
+    title: 'Nova Mensagem - SSE Demo'
+  },
+
+  // Editar mensagem (todos os usuários autenticados, mas com restrições no backend)
+  {
+    path: 'messages/edit/:id',
+    loadComponent: () => import('./components/messages/message-form.component').then(m => m.MessageFormComponent),
+    canActivate: [AuthGuard],
+    title: 'Editar Mensagem - SSE Demo'
+  },
+
   // Gerenciamento de usuários (apenas ADMIN)
   {
     path: 'users',

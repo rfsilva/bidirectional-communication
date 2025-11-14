@@ -62,7 +62,7 @@ public class SSEController {
                     examples = @ExampleObject(value = """
                         {
                             "status": "success",
-                            "message": "Notificação enviada",
+                            "userMessage": "Notificação enviada",
                             "activeConnections": "2"
                         }
                         """))),
@@ -73,14 +73,14 @@ public class SSEController {
             @Parameter(description = "Dados da notificação de teste", required = true,
                     content = @Content(examples = @ExampleObject(value = """
                         {
-                            "message": "Minha notificação de teste personalizada"
+                            "userMessage": "Minha notificação de teste personalizada"
                         }
                         """)))
             @RequestBody Map<String, String> request) {
         
         // Usar método de conveniência para evitar warning de varargs
         String defaultMessage = messageService.getMessage("sse.test.notification.default");
-        String userMessage = request.getOrDefault("message", defaultMessage);
+        String userMessage = request.getOrDefault("userMessage", defaultMessage);
         
         String testMessage = messageService.getSSEMessage("test.notification", userMessage);
         log.info(testMessage);
@@ -91,7 +91,7 @@ public class SSEController {
         
         return ResponseEntity.ok(Map.of(
             "status", "success",
-            "message", responseMessage,
+            "userMessage", responseMessage,
             "activeConnections", String.valueOf(notificationService.getActiveConnectionsCount())
         ));
     }
@@ -106,7 +106,7 @@ public class SSEController {
                     examples = @ExampleObject(value = """
                         {
                             "status": "success",
-                            "message": "Busca de dados externos executada",
+                            "userMessage": "Busca de dados externos executada",
                             "recordsImported": 3
                         }
                         """))),
@@ -115,7 +115,7 @@ public class SSEController {
                     examples = @ExampleObject(value = """
                         {
                             "status": "error",
-                            "message": "Erro ao buscar dados externos",
+                            "userMessage": "Erro ao buscar dados externos",
                             "error": "Detalhes do erro"
                         }
                         """)))
@@ -131,7 +131,7 @@ public class SSEController {
             
             return ResponseEntity.ok(Map.of(
                 "status", "success",
-                "message", successMessage,
+                "userMessage", successMessage,
                 "recordsImported", newData.size()
             ));
             
@@ -141,7 +141,7 @@ public class SSEController {
             
             return ResponseEntity.internalServerError().body(Map.of(
                 "status", "error",
-                "message", errorMessage,
+                "userMessage", errorMessage,
                 "error", e.getMessage()
             ));
         }
