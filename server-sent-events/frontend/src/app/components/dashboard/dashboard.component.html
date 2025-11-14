@@ -1,4 +1,69 @@
 <div class="container-fluid">
+  <!-- Header com Avatar -->
+  <div class="dashboard-header">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="display-4 mb-0">Server-Sent Events Demo</h1>
+        <p class="text-muted">Comunicação em tempo real entre Angular 18 e Spring Boot 3</p>
+      </div>
+      <app-user-avatar></app-user-avatar>
+    </div>
+  </div>
+
+  <!-- User Info & Permissions -->
+  <div class="row mb-4" *ngIf="currentUser">
+    <div class="col-12">
+      <div class="card border-success">
+        <div class="card-header bg-success text-white">
+          <h6 class="mb-0">👤 Informações do Usuário Logado</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="d-flex align-items-center mb-2">
+                <span class="me-2" style="font-size: 1.5em;">👤</span>
+                <div>
+                  <strong>Usuário:</strong> {{ currentUser.fullName }} ({{ currentUser.username }})
+                </div>
+              </div>
+              <div class="d-flex align-items-center mb-2">
+                <span class="me-2" style="font-size: 1.5em;">📧</span>
+                <div>
+                  <strong>Email:</strong> {{ currentUser.email }}
+                </div>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="me-2" style="font-size: 1.5em;">🎭</span>
+                <div>
+                  <strong>Perfil:</strong> 
+                  <span class="badge ms-1" [class]="'bg-' + userRoleColor">
+                    {{ currentUser.roleName }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-2">
+                <strong>Permissões:</strong>
+                <div class="mt-1">
+                  <span class="badge bg-success me-1" *ngIf="canEditData()">✏️ Editar Dados</span>
+                  <span class="badge bg-info me-1">👁️ Visualizar Dados</span>
+                  <span class="badge bg-warning me-1" *ngIf="canManageSSE()">📡 Gerenciar SSE</span>
+                  <span class="badge bg-danger me-1" *ngIf="canManageUsers()">👥 Gerenciar Usuários</span>
+                </div>
+              </div>
+              <div *ngIf="currentUser.lastLogin">
+                <small class="text-muted">
+                  <strong>Último login:</strong> {{ formatDate(currentUser.lastLogin) }}
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Connection Status -->
   <div class="connection-status" [class.connected]="isConnected" [class.disconnected]="!isConnected">
     <span class="status-dot"></span>
@@ -9,14 +74,6 @@
   <div class="notification-badge" *ngIf="unreadCount > 0" (click)="refreshData()">
     <span class="badge-count">{{ unreadCount }}</span>
     <span>{{ unreadCount === 1 ? 'Nova atualização' : 'Novas atualizações' }}</span>
-  </div>
-
-  <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <h1 class="display-4 text-center mb-0">Server-Sent Events Demo</h1>
-      <p class="text-center text-muted">Comunicação em tempo real entre Angular 18 e Spring Boot 3</p>
-    </div>
   </div>
 
   <!-- I18N Info -->
@@ -94,12 +151,12 @@
             </div>
           </div>
           <div class="mt-2">
-            <button class="btn btn-sm btn-outline-primary me-2" (click)="testConnectivity()">
-              🔍 Testar Conectividade
-            </button>
             <button class="btn btn-sm btn-outline-warning" (click)="reconnectSSE()">
-              🔄 Forçar Reconexão
+              🔄 Forçar Reconexão SSE
             </button>
+            <small class="text-muted ms-2">
+              Use este botão se a conexão SSE estiver com problemas
+            </small>
           </div>
         </div>
       </div>
@@ -167,8 +224,13 @@
               </button>
             </div>
             <div class="col-md-3">
-              <button class="btn btn-success w-100" (click)="forceExternalFetch()">
+              <button 
+                class="btn btn-success w-100" 
+                (click)="forceExternalFetch()"
+                [disabled]="!canManageSSE()"
+                [title]="!canManageSSE() ? 'Sem permissão' : 'Buscar dados externos'">
                 Buscar Externos
+                <i class="fas fa-lock ms-1" *ngIf="!canManageSSE()"></i>
               </button>
             </div>
             <div class="col-md-3">
@@ -191,7 +253,7 @@
       </div>
 
       <!-- Create New Item -->
-      <div class="card mb-4">
+      <div class="card mb-4" *ngIf="canEditData()">
         <div class="card-header">
           <h5 class="mb-0">Criar Novo Item</h5>
         </div>
@@ -227,6 +289,13 @@
             </div>
           </form>
         </div>
+      </div>
+
+      <!-- Permission Notice for Viewers -->
+      <div class="alert alert-info" *ngIf="!canEditData()">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Modo Visualização:</strong> Você tem permissão apenas para visualizar os dados. 
+        Para criar, editar ou excluir dados, entre em contato com um administrador.
       </div>
 
       <!-- Data Tabs -->
@@ -296,11 +365,18 @@
                     </small>
                   </div>
                   <button 
+                    *ngIf="canEditData()"
                     class="btn btn-outline-danger btn-sm"
                     (click)="deleteItem(item.id!)"
                     title="Excluir item">
                     🗑️
                   </button>
+                  <span 
+                    *ngIf="!canEditData()"
+                    class="badge bg-secondary"
+                    title="Sem permissão para excluir">
+                    🔒
+                  </span>
                 </div>
               </div>
             </div>

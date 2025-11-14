@@ -24,7 +24,7 @@ public class MessageService {
      * @return Mensagem traduzida
      */
     public String getMessage(String key) {
-        return getMessage(key, null);
+        return getMessage(key, (Object[]) null);
     }
 
     /**
@@ -123,5 +123,43 @@ public class MessageService {
      */
     public Locale getCurrentLocale() {
         return LocaleContextHolder.getLocale();
+    }
+
+    // Métodos de conveniência para casos comuns
+
+    /**
+     * Obtém uma mensagem com um único parâmetro.
+     *
+     * @param key Chave da mensagem
+     * @param arg Argumento único
+     * @return Mensagem traduzida
+     */
+    public String getMessage(String key, Object arg) {
+        return getMessage(key, new Object[]{arg});
+    }
+
+    /**
+     * Obtém uma mensagem com dois parâmetros.
+     *
+     * @param key Chave da mensagem
+     * @param arg1 Primeiro argumento
+     * @param arg2 Segundo argumento
+     * @return Mensagem traduzida
+     */
+    public String getMessage(String key, Object arg1, Object arg2) {
+        return getMessage(key, new Object[]{arg1, arg2});
+    }
+
+    /**
+     * Obtém uma mensagem com três parâmetros.
+     *
+     * @param key Chave da mensagem
+     * @param arg1 Primeiro argumento
+     * @param arg2 Segundo argumento
+     * @param arg3 Terceiro argumento
+     * @return Mensagem traduzida
+     */
+    public String getMessage(String key, Object arg1, Object arg2, Object arg3) {
+        return getMessage(key, new Object[]{arg1, arg2, arg3});
     }
 }

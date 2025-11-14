@@ -78,17 +78,20 @@ public class SSEController {
                         """)))
             @RequestBody Map<String, String> request) {
         
-        String userMessage = request.getOrDefault("message", 
-            messageService.getMessage("sse.test.notification", "Default test message"));
+        // Usar método de conveniência para evitar warning de varargs
+        String defaultMessage = messageService.getMessage("sse.test.notification.default");
+        String userMessage = request.getOrDefault("message", defaultMessage);
         
         String testMessage = messageService.getSSEMessage("test.notification", userMessage);
         log.info(testMessage);
         
         notificationService.sendInfoNotification(userMessage);
         
+        String responseMessage = messageService.getMessage("sse.test.notification.sent");
+        
         return ResponseEntity.ok(Map.of(
             "status", "success",
-            "message", messageService.getMessage("sse.test.notification", "Notification sent"),
+            "message", responseMessage,
             "activeConnections", String.valueOf(notificationService.getActiveConnectionsCount())
         ));
     }

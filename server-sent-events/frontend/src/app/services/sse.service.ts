@@ -1,13 +1,14 @@
 import { Injectable, NgZone } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { NotificationMessage } from '../models/data-entity.model';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SSEService {
   private eventSource: EventSource | null = null;
-  private readonly sseUrl = 'http://localhost:8080/api/notifications/stream';
+  private readonly baseUrl = 'http://localhost:8080/api/notifications/stream';
   
   private notificationsSubject = new BehaviorSubject<NotificationMessage | null>(null);
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
@@ -19,30 +20,78 @@ export class SSEService {
   public notifications$ = this.notificationsSubject.asObservable();
   public connectionStatus$ = this.connectionStatusSubject.asObservable();
 
-  constructor(private ngZone: NgZone) {}
+  constructor(
+    private ngZone: NgZone,
+    private authService: AuthService
+  ) {}
 
   connect(): void {
+    // Aguardar inicialização do AuthService se necessário
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🔒 SSE: Usuário não autenticado, aguardando...');
+      
+      // Aguardar um pouco e tentar novamente
+      setTimeout(() => {
+        if (this.authService.isAuthenticated()) {
+          console.log('✅ SSE: Usuário autenticado, tentando conectar novamente');
+          this.connect();
+        } else {
+          console.warn('🔒 SSE: Usuário ainda não autenticado após aguardar');
+        }
+      }, 1000);
+      return;
+    }
+
     if (this.eventSource?.readyState === EventSource.OPEN) {
-      console.log('SSE já está conectado');
+      console.log('📡 SSE: Já está conectado');
+      return;
+    }
+
+    const token = this.authService.getToken();
+    if (!token) {
+      console.error('🔒 SSE: Token JWT não encontrado');
+      console.error('🔍 SSE: Debug de autenticação:', {
+        isAuthenticated: this.authService.isAuthenticated(),
+        hasCurrentUser: !!this.authService.getCurrentUser(),
+        tokenExists: false
+      });
+      
+      // Tentar obter token do servidor
+      this.authService.getCurrentUserFromServer().subscribe({
+        next: () => {
+          console.log('✅ SSE: Token atualizado, tentando conectar novamente');
+          setTimeout(() => this.connect(), 500);
+        },
+        error: (error) => {
+          console.error('❌ SSE: Erro ao obter token do servidor:', error);
+        }
+      });
       return;
     }
 
     this.disconnect(); // Limpar conexão anterior se existir
 
-    console.log(`🔄 Tentando conectar ao SSE: ${this.sseUrl}`);
-    console.log(`📊 Tentativa ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts + 1}`);
+    // Construir URL com token como query parameter (EventSource não suporta headers)
+    const sseUrl = `${this.baseUrl}?token=${encodeURIComponent(token)}`;
+
+    console.log(`🔄 SSE: Tentando conectar com autenticação`);
+    console.log(`📊 SSE: Tentativa ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts + 1}`);
+    console.log(`👤 SSE: Usuário: ${this.authService.getCurrentUser()?.username}`);
+    console.log(`🔗 SSE: URL: ${this.baseUrl}?token=***`);
     
     try {
-      this.eventSource = new EventSource(this.sseUrl);
-      console.log('📡 EventSource criado, aguardando conexão...');
+      this.eventSource = new EventSource(sseUrl);
+      console.log('📡 SSE: EventSource criado com token JWT, aguardando conexão...');
       
       // Log do estado inicial
-      console.log('🔍 Estado inicial do EventSource:', this.getReadyStateText());
+      console.log('🔍 SSE: Estado inicial:', this.getReadyStateText());
 
       this.eventSource.onopen = (event) => {
         this.ngZone.run(() => {
-          console.log('✅ SSE conectado com sucesso!', event);
-          console.log('🔍 Estado da conexão:', this.getReadyStateText());
+          console.log('✅ SSE: Conectado com sucesso e autenticado!', event);
+          console.log('🔍 SSE: Estado da conexão:', this.getReadyStateText());
+          console.log('👤 SSE: Usuário conectado:', this.authService.getCurrentUser()?.username);
+          
           this.connectionStatusSubject.next(true);
           this.reconnectAttempts = 0;
           this.reconnectDelay = 3000;
@@ -58,13 +107,13 @@ export class SSEService {
       this.eventSource.onmessage = (event: MessageEvent) => {
         this.ngZone.run(() => {
           try {
-            console.log('📨 Mensagem SSE recebida (raw):', event.data);
+            console.log('📨 SSE: Mensagem recebida (raw):', event.data);
             const message: NotificationMessage = JSON.parse(event.data);
-            console.log('📨 Mensagem SSE processada:', message);
+            console.log('📨 SSE: Mensagem processada:', message);
             this.notificationsSubject.next(message);
           } catch (error) {
-            console.error('❌ Erro ao processar mensagem SSE:', error);
-            console.error('📄 Dados recebidos:', event.data);
+            console.error('❌ SSE: Erro ao processar mensagem:', error);
+            console.error('📄 SSE: Dados recebidos:', event.data);
           }
         });
       };
@@ -74,36 +123,68 @@ export class SSEService {
 
       this.eventSource.onerror = (error) => {
         this.ngZone.run(() => {
-          console.error('❌ Erro na conexão SSE:', error);
-          console.error('🔍 Estado da conexão:', this.getReadyStateText());
-          console.error('🔍 URL tentada:', this.sseUrl);
+          console.error('❌ SSE: Erro na conexão:', error);
+          console.error('🔍 SSE: Estado da conexão:', this.getReadyStateText());
+          console.error('🔍 SSE: Status de autenticação:', {
+            isAuthenticated: this.authService.isAuthenticated(),
+            hasToken: !!this.authService.getToken(),
+            currentUser: this.authService.getCurrentUser()?.username || 'nenhum'
+          });
           
           this.connectionStatusSubject.next(false);
           
           // Verificar se é um erro de rede ou servidor
           if (this.eventSource?.readyState === EventSource.CLOSED) {
-            console.error('🔒 Conexão foi fechada pelo servidor ou erro de rede');
+            console.error('🔒 SSE: Conexão foi fechada pelo servidor ou erro de rede');
             
-            if (this.reconnectAttempts < this.maxReconnectAttempts) {
-              this.reconnectAttempts++;
-              console.log(`🔄 Tentativa de reconexão ${this.reconnectAttempts}/${this.maxReconnectAttempts} em ${this.reconnectDelay}ms`);
-              
-              this.reconnectTimer = setTimeout(() => {
-                this.connect();
-              }, this.reconnectDelay);
-              
-              // Aumentar delay progressivamente
-              this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 30000);
-            } else {
-              console.error('💀 Máximo de tentativas de reconexão atingido');
-              console.error('🔧 Verifique se o servidor está rodando em:', this.sseUrl);
+            // Verificar se o token ainda é válido
+            if (!this.authService.isAuthenticated()) {
+              console.error('🔒 SSE: Token expirado ou usuário deslogado, não reconectando');
+              return;
             }
+            
+            // Verificar se o token ainda é válido no servidor
+            this.authService.validateToken().subscribe({
+              next: (isValid) => {
+                if (!isValid) {
+                  console.error('🔒 SSE: Token inválido no servidor, não reconectando');
+                  this.authService.forceLogout();
+                  return;
+                }
+                
+                // Token válido, tentar reconectar
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                  this.reconnectAttempts++;
+                  console.log(`🔄 SSE: Tentativa de reconexão ${this.reconnectAttempts}/${this.maxReconnectAttempts} em ${this.reconnectDelay}ms`);
+                  
+                  this.reconnectTimer = setTimeout(() => {
+                    // Verificar novamente se ainda está autenticado antes de reconectar
+                    if (this.authService.isAuthenticated()) {
+                      console.log('🔄 SSE: Reconectando (usuário ainda autenticado)...');
+                      this.connect();
+                    } else {
+                      console.warn('🔒 SSE: Usuário não está mais autenticado, cancelando reconexão');
+                    }
+                  }, this.reconnectDelay);
+                  
+                  // Aumentar delay progressivamente
+                  this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, 30000);
+                } else {
+                  console.error('💀 SSE: Máximo de tentativas de reconexão atingido');
+                  console.error('🔧 SSE: Verifique se o servidor está rodando e o token é válido');
+                }
+              },
+              error: (error) => {
+                console.error('❌ SSE: Erro ao validar token:', error);
+                this.authService.forceLogout();
+              }
+            });
           }
         });
       };
 
     } catch (error) {
-      console.error('💥 Erro ao criar EventSource:', error);
+      console.error('💥 SSE: Erro ao criar EventSource:', error);
       this.connectionStatusSubject.next(false);
     }
   }
@@ -118,11 +199,11 @@ export class SSEService {
         this.ngZone.run(() => {
           try {
             const messageEvent = event as MessageEvent;
-            console.log(`📨 Evento '${eventType}' recebido:`, messageEvent.data);
+            console.log(`📨 SSE: Evento '${eventType}' recebido:`, messageEvent.data);
             const message: NotificationMessage = JSON.parse(messageEvent.data);
             this.notificationsSubject.next(message);
           } catch (error) {
-            console.error(`❌ Erro ao processar evento '${eventType}':`, error);
+            console.error(`❌ SSE: Erro ao processar evento '${eventType}':`, error);
           }
         });
       });
@@ -136,13 +217,13 @@ export class SSEService {
     }
     
     if (this.eventSource) {
-      console.log('🔌 Desconectando SSE...');
+      console.log('🔌 SSE: Desconectando...');
       this.eventSource.close();
       this.eventSource = null;
       this.connectionStatusSubject.next(false);
       this.reconnectAttempts = 0;
       this.reconnectDelay = 3000;
-      console.log('✅ SSE desconectado');
+      console.log('✅ SSE: Desconectado');
     }
   }
 
@@ -169,7 +250,14 @@ export class SSEService {
   }
 
   forceReconnect(): void {
-    console.log('🔄 Forçando reconexão SSE...');
+    console.log('🔄 SSE: Forçando reconexão...');
+    
+    // Verificar autenticação antes de reconectar
+    if (!this.authService.isAuthenticated()) {
+      console.warn('🔒 SSE: Usuário não autenticado, reconexão cancelada');
+      return;
+    }
+    
     this.reconnectAttempts = 0;
     this.reconnectDelay = 3000;
     this.disconnect();
@@ -178,15 +266,25 @@ export class SSEService {
 
   // Método para debug - mostra informações detalhadas
   getDebugInfo(): any {
+    const token = this.authService.getToken();
+    const currentUser = this.authService.getCurrentUser();
+    
     return {
-      url: this.sseUrl,
+      url: this.baseUrl,
       connected: this.isConnected(),
       readyState: this.getReadyStateText(),
       reconnectAttempts: this.reconnectAttempts,
       maxReconnectAttempts: this.maxReconnectAttempts,
       reconnectDelay: this.reconnectDelay,
       hasEventSource: !!this.eventSource,
-      hasReconnectTimer: !!this.reconnectTimer
+      hasReconnectTimer: !!this.reconnectTimer,
+      auth: {
+        isAuthenticated: this.authService.isAuthenticated(),
+        hasToken: !!token,
+        tokenPreview: token ? `${token.substring(0, 20)}...` : null,
+        currentUser: currentUser?.username || 'nenhum',
+        userRole: currentUser?.role || 'nenhuma'
+      }
     };
   }
 }

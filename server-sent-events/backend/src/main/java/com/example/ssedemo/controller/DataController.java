@@ -10,12 +10,14 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -24,12 +26,17 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Controller para gerenciamento de dados com suporte a internacionalização.
- * Utiliza Lombok para reduzir boilerplate code.
+ * Controller para gerenciamento de dados com controle de acesso baseado em roles.
+ * 
+ * Permissões:
+ * - ADMIN: Acesso total (CRUD)
+ * - EDITOR: Acesso total (CRUD) 
+ * - VIEWER: Apenas leitura (GET)
  */
 @RestController
 @RequestMapping("/api/data")
 @Tag(name = "Data Management", description = "Operações CRUD para gerenciamento de dados")
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
 public class DataController {
@@ -41,9 +48,12 @@ public class DataController {
     @Operation(summary = "Listar todos os dados", description = "Retorna uma lista com todos os registros de dados")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Lista de dados retornada com sucesso",
-                content = @Content(mediaType = "application/json", schema = @Schema(implementation = DataEntity.class)))
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = DataEntity.class))),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+        @ApiResponse(responseCode = "403", description = "Acesso negado")
     })
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR', 'VIEWER')")
     public ResponseEntity<List<DataEntity>> getAllData() {
         log.info(messageService.getInfoMessage("fetching.all.data"));
         List<DataEntity> data = dataService.findAll();
@@ -54,9 +64,12 @@ public class DataController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Dados encontrados",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = DataEntity.class))),
-        @ApiResponse(responseCode = "404", description = "Dados não encontrados")
+        @ApiResponse(responseCode = "404", description = "Dados não encontrados"),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+        @ApiResponse(responseCode = "403", description = "Acesso negado")
     })
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR', 'VIEWER')")
     public ResponseEntity<DataEntity> getDataById(
             @Parameter(description = "ID do registro a ser buscado", required = true)
             @PathVariable Long id) {
@@ -67,14 +80,17 @@ public class DataController {
                   .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Criar novo registro", description = "Cria um novo registro de dados e envia notificação SSE")
+    @Operation(summary = "Criar novo registro", description = "Cria um novo registro de dados e envia notificação SSE (ADMIN/EDITOR)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Registro criado com sucesso",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = DataEntity.class))),
         @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+        @ApiResponse(responseCode = "403", description = "Acesso negado - apenas ADMIN/EDITOR"),
         @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
     public ResponseEntity<DataEntity> createData(
             @Parameter(description = "Dados do registro a ser criado", required = true)
             @Valid @RequestBody DataEntity dataEntity) {
@@ -96,15 +112,18 @@ public class DataController {
         }
     }
 
-    @Operation(summary = "Atualizar registro", description = "Atualiza um registro existente e envia notificação SSE")
+    @Operation(summary = "Atualizar registro", description = "Atualiza um registro existente e envia notificação SSE (ADMIN/EDITOR)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Registro atualizado com sucesso",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = DataEntity.class))),
         @ApiResponse(responseCode = "404", description = "Registro não encontrado"),
         @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+        @ApiResponse(responseCode = "403", description = "Acesso negado - apenas ADMIN/EDITOR"),
         @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
     public ResponseEntity<DataEntity> updateData(
             @Parameter(description = "ID do registro a ser atualizado", required = true)
             @PathVariable Long id,
@@ -134,13 +153,16 @@ public class DataController {
         }
     }
 
-    @Operation(summary = "Excluir registro", description = "Remove um registro pelo ID e envia notificação SSE")
+    @Operation(summary = "Excluir registro", description = "Remove um registro pelo ID e envia notificação SSE (ADMIN/EDITOR)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "Registro excluído com sucesso"),
         @ApiResponse(responseCode = "404", description = "Registro não encontrado"),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+        @ApiResponse(responseCode = "403", description = "Acesso negado - apenas ADMIN/EDITOR"),
         @ApiResponse(responseCode = "500", description = "Erro interno do servidor")
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR')")
     public ResponseEntity<Void> deleteData(
             @Parameter(description = "ID do registro a ser excluído", required = true)
             @PathVariable Long id) {
@@ -169,9 +191,12 @@ public class DataController {
     @Operation(summary = "Listar dados externos", description = "Retorna apenas os registros marcados como externos")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Lista de dados externos",
-                content = @Content(mediaType = "application/json", schema = @Schema(implementation = DataEntity.class)))
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = DataEntity.class))),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+        @ApiResponse(responseCode = "403", description = "Acesso negado")
     })
     @GetMapping("/external")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR', 'VIEWER')")
     public ResponseEntity<List<DataEntity>> getExternalData() {
         log.info(messageService.getInfoMessage("fetching.external.data"));
         List<DataEntity> externalData = dataService.findExternalData();
@@ -181,9 +206,12 @@ public class DataController {
     @Operation(summary = "Listar dados internos", description = "Retorna apenas os registros marcados como internos")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Lista de dados internos",
-                content = @Content(mediaType = "application/json", schema = @Schema(implementation = DataEntity.class)))
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = DataEntity.class))),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+        @ApiResponse(responseCode = "403", description = "Acesso negado")
     })
     @GetMapping("/internal")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR', 'VIEWER')")
     public ResponseEntity<List<DataEntity>> getInternalData() {
         log.info(messageService.getInfoMessage("fetching.internal.data"));
         List<DataEntity> internalData = dataService.findInternalData();
@@ -193,9 +221,12 @@ public class DataController {
     @Operation(summary = "Obter estatísticas", description = "Retorna estatísticas gerais dos dados e conexões SSE")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Estatísticas retornadas com sucesso",
-                content = @Content(mediaType = "application/json"))
+                content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401", description = "Usuário não autenticado"),
+        @ApiResponse(responseCode = "403", description = "Acesso negado")
     })
     @GetMapping("/stats")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EDITOR', 'VIEWER')")
     public ResponseEntity<Map<String, Object>> getStats() {
         log.info(messageService.getInfoMessage("fetching.stats"));
         

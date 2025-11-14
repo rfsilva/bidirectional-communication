@@ -52,6 +52,16 @@ spring:
   web:
     locale: en
 
+# Configurações JWT
+app:
+  jwt:
+    secret: SSEDemoSecretKeyForJWTTokenGenerationThatMustBeAtLeast256BitsLongForHS256Algorithm
+    expiration: 86400000 # 24 horas em millisegundos
+  i18n:
+    default-locale: en
+    supported-locales: en,pt,es,it
+    require-explicit-lang-param: true
+
 # SpringDoc OpenAPI 3 Configuration
 springdoc:
   api-docs:
@@ -78,19 +88,13 @@ springdoc:
 scheduling:
   enabled: true
 
-# Configuração customizada da aplicação
-app:
-  i18n:
-    default-locale: en
-    supported-locales: en,pt,es,it
-    require-explicit-lang-param: true
-
 logging:
   level:
     com.example.ssedemo: INFO
     org.springframework.web: INFO
     org.hibernate.SQL: INFO
     org.flywaydb: INFO
+    org.springframework.security: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
@@ -106,6 +110,7 @@ spring:
     level:
       com.example.ssedemo: DEBUG
       org.hibernate.SQL: DEBUG
+      org.springframework.security: DEBUG
 
 ---
 # Profile para Docker

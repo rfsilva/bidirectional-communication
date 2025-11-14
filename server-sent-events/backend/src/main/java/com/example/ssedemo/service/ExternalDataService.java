@@ -60,7 +60,7 @@ public class ExternalDataService {
             return;
         }
 
-        String fetchingMessage = messageService.getMessage("external.data.fetch.periodic", "Iniciando busca de dados externos...");
+        String fetchingMessage = messageService.getMessage("external.data.fetch.periodic");
         log.info(fetchingMessage);
         
         try {
@@ -88,10 +88,8 @@ public class ExternalDataService {
             log.error(errorMessage, e);
             
             // Notificar erro via SSE
-            notificationService.sendErrorNotification(
-                messageService.getMessage("external.data.fetch.error", "Erro ao importar dados externos"),
-                e.getMessage()
-            );
+            String errorNotificationMessage = messageService.getMessage("external.data.fetch.error.notification");
+            notificationService.sendErrorNotification(errorNotificationMessage, e.getMessage());
         }
     }
 
@@ -161,10 +159,8 @@ public class ExternalDataService {
             String errorMessage = messageService.getMessage("external.data.fetch.error", e.getMessage());
             log.error(errorMessage, e);
             
-            notificationService.sendErrorNotification(
-                messageService.getMessage("external.data.fetch.error", "Erro na busca manual de dados externos"),
-                e.getMessage()
-            );
+            String errorNotificationMessage = messageService.getMessage("external.data.fetch.error.manual");
+            notificationService.sendErrorNotification(errorNotificationMessage, e.getMessage());
             
             throw new RuntimeException("Erro ao buscar dados externos", e);
         }
