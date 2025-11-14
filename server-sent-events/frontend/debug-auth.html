@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Autenticação</title>
+</head>
+<body>
+    <h1>Debug de Autenticação</h1>
+    <div id="results"></div>
+
+    <script>
+        // Verificar se há token no localStorage
+        const token = localStorage.getItem('sse-demo-token');
+        const user = localStorage.getItem('sse-demo-user');
+        
+        const results = document.getElementById('results');
+        
+        results.innerHTML = `
+            <h3>Estado do localStorage:</h3>
+            <p><strong>Token:</strong> ${token ? 'Presente (' + token.substring(0, 30) + '...)' : 'Ausente'}</p>
+            <p><strong>Usuário:</strong> ${user ? 'Presente' : 'Ausente'}</p>
+            
+            <h3>Teste de Requisição Manual:</h3>
+            <button onclick="testRequest()">Testar Requisição com Token</button>
+            <div id="test-results"></div>
+        `;
+        
+        async function testRequest() {
+            const testResults = document.getElementById('test-results');
+            
+            if (!token) {
+                testResults.innerHTML = '<p style="color: red;">❌ Nenhum token encontrado</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/data', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    testResults.innerHTML = `<p style="color: green;">✅ Sucesso! Recebidos ${data.length} registros</p>`;
+                } else {
+                    testResults.innerHTML = `<p style="color: red;">❌ Erro ${response.status}: ${response.statusText}</p>`;
+                }
+            } catch (error) {
+                testResults.innerHTML = `<p style="color: red;">❌ Erro de rede: ${error.message}</p>`;
+            }
+        }
+        
+        window.testRequest = testRequest;
+    </script>
+</body>
+</html>

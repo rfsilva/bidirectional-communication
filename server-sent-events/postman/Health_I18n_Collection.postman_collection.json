@@ -1,0 +1,793 @@
+{
+	"info": {
+		"_postman_id": "health-i18n-collection-001",
+		"name": "Health & I18n Controllers",
+		"description": "Collection para testar os endpoints dos controllers HealthController e I18nController.\n\n**HealthController:**\n- Verificação de saúde da aplicação\n- Status do serviço\n\n**I18nController:**\n- Mensagens traduzidas\n- Idiomas suportados\n- Testes de internacionalização\n- Demonstração de comportamento I18N\n\n**Idiomas Suportados:**\n- English (padrão)\n- Português (pt)\n- Español (es)\n- Italiano (it)\n\n**Como usar:**\n1. Selecione o environment 'SSE Demo - Local Development'\n2. Execute os requests na ordem sugerida\n3. Para testar diferentes idiomas, use o parâmetro ?lang=pt|es|it",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Controller",
+			"item": [
+				{
+					"name": "Health Check - English (Default)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"    pm.expect(jsonData).to.have.property('timestamp');",
+									"    pm.expect(jsonData).to.have.property('service');",
+									"    pm.expect(jsonData).to.have.property('version');",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('locale');",
+									"});",
+									"",
+									"pm.test(\"Service status is UP\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('UP');",
+									"});",
+									"",
+									"pm.test(\"Default locale is English\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.locale).to.include('en');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/health",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check - Portuguese",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is in Portuguese\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.locale).to.include('pt');",
+									"});",
+									"",
+									"pm.test(\"Message is translated\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/health?lang={{language}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"health"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check - Spanish",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is in Spanish\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.locale).to.include('es');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/health?lang=es",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"health"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "es"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check - Italian",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is in Italian\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.locale).to.include('it');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/health?lang=it",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"health"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "it"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints do HealthController para verificação de saúde da aplicação.\n\nTesta o endpoint `/api/health` em diferentes idiomas para verificar:\n- Status da aplicação\n- Informações do serviço\n- Funcionamento da internacionalização"
+		},
+		{
+			"name": "I18n Controller",
+			"item": [
+				{
+					"name": "Get Supported Locales",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has supported locales\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('supportedLocales');",
+									"    pm.expect(jsonData.supportedLocales).to.be.an('array');",
+									"    pm.expect(jsonData.supportedLocales.length).to.be.at.least(4);",
+									"});",
+									"",
+									"pm.test(\"Contains expected languages\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const codes = jsonData.supportedLocales.map(locale => locale.code);",
+									"    pm.expect(codes).to.include.members(['en', 'pt', 'es', 'it']);",
+									"});",
+									"",
+									"pm.test(\"Has default behavior explanation\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('defaultBehavior');",
+									"    pm.expect(jsonData).to.have.property('examples');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/i18n/locales",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"locales"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Translated Messages - English (Default)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has messages\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('messages');",
+									"    pm.expect(jsonData).to.have.property('currentLocale');",
+									"});",
+									"",
+									"pm.test(\"Default locale is English\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.currentLocale).to.include('en');",
+									"});",
+									"",
+									"pm.test(\"Contains expected message types\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const messages = jsonData.messages;",
+									"    pm.expect(messages).to.have.property('welcome');",
+									"    pm.expect(messages).to.have.property('dataCreated');",
+									"    pm.expect(messages).to.have.property('sseConnected');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/i18n/messages",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Translated Messages - Portuguese",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is in Portuguese\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.currentLocale).to.include('pt');",
+									"});",
+									"",
+									"pm.test(\"Messages are translated\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.messages).to.not.be.empty;",
+									"    pm.expect(jsonData.requestedLang).to.eql('pt');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/i18n/messages?lang={{language}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Translated Messages - Spanish",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is in Spanish\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.currentLocale).to.include('es');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/i18n/messages?lang=es",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "es"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Translated Messages - Italian",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is in Italian\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.currentLocale).to.include('it');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/i18n/messages?lang=it",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"messages"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "it"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "I18n Behavior Demo - English",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Has explanation of I18n behavior\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('explanation');",
+									"    pm.expect(jsonData).to.have.property('currentRequest');",
+									"    pm.expect(jsonData).to.have.property('examples');",
+									"});",
+									"",
+									"pm.test(\"Explains default behavior\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.explanation).to.have.property('defaultBehavior');",
+									"    pm.expect(jsonData.explanation).to.have.property('toChangeLanguage');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/i18n/demo",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"demo"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "I18n Behavior Demo - Portuguese",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Shows Portuguese locale\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.currentRequest.resolvedLocale).to.include('pt');",
+									"    pm.expect(jsonData.currentRequest.langParam).to.eql('pt');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/i18n/demo?lang={{language}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"demo"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Message - health.status.up (English)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has message details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('key');",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('locale');",
+									"    pm.expect(jsonData.key).to.eql('health.status.up');",
+									"});",
+									"",
+									"pm.test(\"Message is not empty\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/i18n/message/health.status.up",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"message",
+								"health.status.up"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Message - health.status.up (Portuguese)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is in Portuguese\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.locale).to.include('pt');",
+									"    pm.expect(jsonData.requestedLang).to.eql('pt');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/i18n/message/health.status.up?lang={{language}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"message",
+								"health.status.up"
+							],
+							"query": [
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Message with Args - success.created",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Message contains arguments\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include('Test Item');",
+									"    pm.expect(jsonData.args).to.include('Test Item');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/i18n/message/success.created?args=Test Item&lang={{language}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"i18n",
+								"message",
+								"success.created"
+							],
+							"query": [
+								{
+									"key": "args",
+									"value": "Test Item"
+								},
+								{
+									"key": "lang",
+									"value": "{{language}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints do I18nController para demonstração de internacionalização.\n\nTesta os endpoints:\n- `/api/i18n/locales` - Lista idiomas suportados\n- `/api/i18n/messages` - Mensagens traduzidas\n- `/api/i18n/demo` - Demonstração de comportamento\n- `/api/i18n/message/{key}` - Mensagem específica\n\nCada endpoint pode ser testado com diferentes idiomas usando o parâmetro `?lang=pt|es|it`"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Log da requisição para debug",
+					"console.log('Executando request:', pm.info.requestName);",
+					"console.log('URL:', pm.request.url.toString());",
+					"",
+					"// Verifica se as variáveis de ambiente estão definidas",
+					"if (!pm.environment.get('apiUrl')) {",
+					"    console.warn('Variável apiUrl não está definida no environment');",
+					"}",
+					"",
+					"if (!pm.environment.get('language')) {",
+					"    console.warn('Variável language não está definida no environment');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Testes globais para todas as requisições",
+					"pm.test('Response time is acceptable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"pm.test('Response has JSON content type', function () {",
+					"    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+					"});",
+					"",
+					"// Log da resposta para debug",
+					"console.log('Response status:', pm.response.status);",
+					"console.log('Response time:', pm.response.responseTime + 'ms');",
+					"",
+					"// Se a resposta for JSON, log dos dados principais",
+					"try {",
+					"    const jsonData = pm.response.json();",
+					"    if (jsonData.locale) {",
+					"        console.log('Response locale:', jsonData.locale);",
+					"    }",
+					"    if (jsonData.currentLocale) {",
+					"        console.log('Current locale:', jsonData.currentLocale);",
+					"    }",
+					"} catch (e) {",
+					"    console.log('Response is not JSON or has parsing error');",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "collectionVersion",
+			"value": "1.0.0",
+			"type": "string"
+		},
+		{
+			"key": "collectionDescription",
+			"value": "Collection para testar Health e I18n Controllers",
+			"type": "string"
+		}
+	]
+}

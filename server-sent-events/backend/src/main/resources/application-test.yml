@@ -1,0 +1,39 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+      
+  # Configuração do H2 em memória para testes
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+    
+  # Configuração do JPA/Hibernate para H2
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop # Para testes, recria o schema
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+  
+  # Configuração do Flyway para H2
+  flyway:
+    enabled: false # Desabilitar Flyway para testes com H2
+  
+  # Console H2 para debug
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+logging:
+  level:
+    com.example.ssedemo: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.springframework.security: DEBUG
