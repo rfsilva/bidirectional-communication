@@ -14,11 +14,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
  * Serviço para simular captura de mensagens de sistemas externos.
  * Similar ao ExternalDataService, mas para mensagens.
+ * Agora com suporte a notificações SSE individuais.
  */
 @Service
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ public class ExternalMessageService {
 
     private final UserMessageService userMessageService;
     private final UserRepository userRepository;
+    private final SSENotificationService sseNotificationService;
     private final Random random = new Random();
 
     // Simulação de diferentes sistemas externos
@@ -113,7 +116,7 @@ public class ExternalMessageService {
     /**
      * Executa busca periódica de mensagens externas a cada 2 minutos.
      */
-    @Scheduled(fixedRate = 120000) // 2 minutos
+    @Scheduled(fixedRate = 20000) // 20 segundos
     public void fetchExternalMessagesPeriodically() {
         try {
             List<UserMessage> newUserMessages = simulateExternalMessageFetch();
@@ -181,8 +184,11 @@ public class ExternalMessageService {
                 
                 userMessages.add(userMessage);
                 
-                log.debug("📨 Mensagem externa criada: {} para usuário {}", 
-                         template.title, randomUser.getUsername());
+                // 🆕 ENVIAR NOTIFICAÇÃO SSE INDIVIDUAL PARA O USUÁRIO
+                sendMessageNotificationToUser(userMessage);
+                
+                log.debug("📨 Mensagem externa criada: {} para usuário {} (ID: {})", 
+                         template.title, randomUser.getUsername(), randomUser.getId());
                 
             } catch (Exception e) {
                 log.error("❌ Erro ao criar mensagem externa: {}", e.getMessage());
@@ -190,6 +196,39 @@ public class ExternalMessageService {
         }
         
         return userMessages;
+    }
+
+    /**
+     * 🆕 Envia notificação SSE individual para o usuário que recebeu uma nova mensagem.
+     */
+    private void sendMessageNotificationToUser(UserMessage userMessage) {
+        try {
+            User user = userMessage.getUser();
+            
+            // Verificar se o usuário tem conexões SSE ativas
+            int userConnections = sseNotificationService.getActiveConnectionsCountForUser(user.getId());
+            
+            if (userConnections > 0) {
+                // Enviar notificação SSE individual
+                sseNotificationService.sendNewMessageNotification(
+                    user.getId(),
+                    userMessage.getTitle(),
+                    userMessage.getContent(),
+                    userMessage.getType().name(),
+                    userMessage.getId()
+                );
+                
+                log.info("🔔 Notificação SSE enviada para usuário {} (ID: {}) - {} conexões ativas", 
+                        user.getUsername(), user.getId(), userConnections);
+            } else {
+                log.debug("📱 Usuário {} (ID: {}) não tem conexões SSE ativas - notificação não enviada", 
+                         user.getUsername(), user.getId());
+            }
+            
+        } catch (Exception e) {
+            log.error("❌ Erro ao enviar notificação SSE para mensagem ID {}: {}", 
+                     userMessage.getId(), e.getMessage());
+        }
     }
 
     /**
@@ -222,7 +261,7 @@ public class ExternalMessageService {
         if (template.contains("relatório")) {
             content += " Código do relatório: RPT-" + System.currentTimeMillis();
         } else if (template.contains("fatura")) {
-            content += " Valor: R$ " + (random.nextDouble() * 1000 + 100);
+            content += " Valor: R$ " + String.format("%.2f", (random.nextDouble() * 1000 + 100));
         } else if (template.contains("backup")) {
             content += " Tamanho: " + (random.nextInt(500) + 50) + " MB";
         }
@@ -244,7 +283,7 @@ public class ExternalMessageService {
         
         String personalizedContent = personalizeMessageContent(template.content, user);
         
-        return userMessageService.createExternalMessage(
+        UserMessage userMessage = userMessageService.createExternalMessage(
             userId,
             template.title,
             personalizedContent,
@@ -252,6 +291,37 @@ public class ExternalMessageService {
             template.priority,
             template.source
         );
+        
+        // 🆕 Enviar notificação SSE para o teste também
+        sendMessageNotificationToUser(userMessage);
+        
+        return userMessage;
+    }
+
+    /**
+     * 🆕 Cria uma mensagem de teste personalizada e envia notificação SSE.
+     */
+    public UserMessage createCustomTestMessage(Long userId, String title, String content, 
+                                             UserMessage.MessageType type, UserMessage.Priority priority) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado: " + userId));
+        
+        UserMessage userMessage = userMessageService.createExternalMessage(
+            userId,
+            title,
+            content,
+            type,
+            priority,
+            "TEST_SYSTEM"
+        );
+        
+        // Enviar notificação SSE
+        sendMessageNotificationToUser(userMessage);
+        
+        log.info("📨 Mensagem de teste personalizada criada para usuário {} (ID: {}): {}", 
+                user.getUsername(), userId, title);
+        
+        return userMessage;
     }
 
     /**
@@ -264,6 +334,19 @@ public class ExternalMessageService {
             }
         }
         return null;
+    }
+
+    /**
+     * 🆕 Obtém estatísticas das notificações SSE enviadas.
+     */
+    public Map<String, Object> getNotificationStats() {
+        return Map.of(
+            "totalActiveConnections", sseNotificationService.getActiveConnectionsCount(),
+            "activeUsers", sseNotificationService.getActiveUsersCount(),
+            "connectionStats", sseNotificationService.getConnectionStats(),
+            "availableSources", EXTERNAL_SOURCES,
+            "availableTemplates", MESSAGE_TEMPLATES.length
+        );
     }
 
     /**

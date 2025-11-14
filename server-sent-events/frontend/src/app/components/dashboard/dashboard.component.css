@@ -241,6 +241,11 @@
   color: #383d41;
 }
 
+.alert-warning {
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  color: #856404;
+}
+
 .badge {
   font-size: 0.7rem;
   padding: 0.25em 0.5em;
@@ -341,7 +346,7 @@ code {
   100% { opacity: 1; }
 }
 
-/* Notification badge */
+/* 🆕 Notification badges - Múltiplos badges */
 .notification-badge {
   position: fixed;
   top: 70px;
@@ -366,11 +371,124 @@ code {
   box-shadow: 0 6px 16px rgba(0,123,255,0.4);
 }
 
+/* 🆕 Badge específico para mensagens */
+.notification-badge.message-badge {
+  top: 120px; /* Posicionar abaixo do badge geral */
+  background: #17a2b8;
+  box-shadow: 0 4px 12px rgba(23,162,184,0.3);
+}
+
+.notification-badge.message-badge:hover {
+  box-shadow: 0 6px 16px rgba(23,162,184,0.4);
+}
+
 .badge-count {
   background: rgba(255,255,255,0.2);
   padding: 2px 8px;
   border-radius: 12px;
   font-weight: 600;
+}
+
+/* 🆕 Estilos para abas de notificações */
+.card-header-tabs {
+  border-bottom: none;
+}
+
+.card-header-tabs .nav-link {
+  border: none;
+  color: #6c757d;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.card-header-tabs .nav-link.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.card-header-tabs .nav-link:hover:not(.active) {
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+.card-header-tabs .nav-link .badge {
+  font-size: 0.6rem;
+  padding: 0.2em 0.4em;
+}
+
+/* 🆕 Estilos específicos para notificações de mensagens */
+.message-notification {
+  border-left: 4px solid #17a2b8;
+  background: linear-gradient(135deg, #ffffff, #f0fdff);
+}
+
+.message-notification .alert {
+  margin-bottom: 0;
+  border-radius: 6px;
+}
+
+.message-notification .fw-bold {
+  color: #0c5460;
+}
+
+.message-notification .text-truncate {
+  line-height: 1.3;
+}
+
+/* 🆕 Animação para novas notificações de mensagens */
+@keyframes messageNotificationPulse {
+  0% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(23,162,184,0.7);
+  }
+  70% { 
+    transform: scale(1.02);
+    box-shadow: 0 0 0 10px rgba(23,162,184,0);
+  }
+  100% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(23,162,184,0);
+  }
+}
+
+.message-notification.new {
+  animation: messageNotificationPulse 2s ease-out;
+}
+
+/* 🆕 Indicador visual para mensagens não lidas */
+.unread-indicator {
+  width: 8px;
+  height: 8px;
+  background: #dc3545;
+  border-radius: 50%;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  animation: pulse 2s infinite;
+}
+
+/* 🆕 Estilos para diferentes tipos de mensagens */
+.message-type-success {
+  border-left-color: #28a745;
+  background: linear-gradient(135deg, #ffffff, #f8fff9);
+}
+
+.message-type-error {
+  border-left-color: #dc3545;
+  background: linear-gradient(135deg, #ffffff, #fff8f8);
+}
+
+.message-type-warning {
+  border-left-color: #ffc107;
+  background: linear-gradient(135deg, #ffffff, #fffef8);
+}
+
+.message-type-info {
+  border-left-color: #17a2b8;
+  background: linear-gradient(135deg, #ffffff, #f0fdff);
 }
 
 /* Responsive adjustments */
@@ -400,4 +518,115 @@ code {
     margin-bottom: 15px;
     justify-content: center;
   }
+
+  /* 🆕 Ajustes para badges de notificação em mobile */
+  .notification-badge.message-badge {
+    top: auto;
+    margin-top: 10px;
+  }
+
+  /* 🆕 Abas responsivas */
+  .card-header-tabs .nav-link {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .card-header-tabs .nav-link .badge {
+    font-size: 0.55rem;
+  }
+}
+
+@media (max-width: 576px) {
+  /* 🆕 Ajustes para telas muito pequenas */
+  .card-header-tabs {
+    flex-wrap: wrap;
+  }
+
+  .card-header-tabs .nav-link {
+    flex: 1;
+    text-align: center;
+    min-width: 120px;
+  }
+
+  .message-notification .text-truncate {
+    max-width: 200px;
+  }
+}
+
+/* 🆕 Melhorias na acessibilidade */
+.notification-badge:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.card-header-tabs .nav-link:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+/* 🆕 Estados de hover para melhor UX */
+.message-notification:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.alert:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* 🆕 Transições suaves */
+.tab-pane {
+  transition: opacity 0.3s ease-in-out;
+}
+
+.message-notification,
+.alert {
+  transition: all 0.2s ease;
+}
+
+/* 🆕 Estilos para botões de ação nas notificações */
+.notification-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.notification-actions .btn {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+/* 🆕 Indicador de tempo relativo */
+.time-indicator {
+  font-size: 0.7rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.time-indicator.recent {
+  color: #28a745;
+  font-weight: 500;
+}
+
+/* 🆕 Estilos para contadores de notificações */
+.notification-counter {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.message-counter {
+  background: linear-gradient(45deg, #17a2b8, #138496);
 }

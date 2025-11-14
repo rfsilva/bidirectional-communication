@@ -37,6 +37,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   unreadCount = 0;
   isConnected = false;
   
+  // 🆕 Notificações de mensagens
+  messageNotifications: NotificationMessage[] = [];
+  unreadMessageCount = 0;
+  
   // UI State
   loading = false;
   activeTab = 'all';
@@ -158,11 +162,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
       })
     );
 
-    // Monitor SSE notifications
+    // Monitor SSE notifications (gerais)
     this.subscriptions.push(
       this.sseService.notifications$.subscribe(notification => {
         if (notification) {
           this.handleSSENotification(notification);
+        }
+      })
+    );
+
+    // 🆕 Monitor notificações específicas de mensagens
+    this.subscriptions.push(
+      this.sseService.messageNotifications$.subscribe(notification => {
+        if (notification) {
+          this.handleMessageNotification(notification);
         }
       })
     );
@@ -199,6 +212,102 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.loadStats();
       }, 1000);
     }
+  }
+
+  // 🆕 Manipular notificações específicas de mensagens
+  private handleMessageNotification(notification: NotificationMessage): void {
+    console.log('🔔 Dashboard: Nova notificação de mensagem recebida:', notification);
+    
+    // Adicionar à lista de notificações de mensagens
+    this.messageNotifications.unshift(notification);
+    
+    // Manter apenas as últimas 10 notificações de mensagens
+    if (this.messageNotifications.length > 10) {
+      this.messageNotifications = this.messageNotifications.slice(0, 10);
+    }
+    
+    // Incrementar contador de mensagens não lidas
+    this.unreadMessageCount++;
+    
+    // Também adicionar às notificações gerais para aparecer no painel principal
+    this.notificationService.addNotification(notification);
+    
+    // Mostrar notificação visual (opcional)
+    this.showMessageNotificationToast(notification);
+  }
+
+  // 🆕 Mostrar toast de notificação de mensagem
+  private showMessageNotificationToast(notification: NotificationMessage): void {
+    // Implementação simples com alert - pode ser substituída por um toast mais sofisticado
+    const messageData = notification.data;
+    if (messageData && messageData.title) {
+      // Não mostrar alert para não ser intrusivo, apenas log
+      console.log(`📨 Nova mensagem: ${messageData.title}`);
+      
+      // Aqui você pode implementar um toast/snackbar mais elegante
+      // Por exemplo, usando uma biblioteca como ngx-toastr
+    }
+  }
+
+  // 🆕 Marcar notificações de mensagens como lidas
+  markMessageNotificationsAsRead(): void {
+    this.unreadMessageCount = 0;
+    console.log('✅ Notificações de mensagens marcadas como lidas');
+  }
+
+  // 🆕 Limpar notificações de mensagens
+  clearMessageNotifications(): void {
+    this.messageNotifications = [];
+    this.unreadMessageCount = 0;
+    this.sseService.clearMessageNotifications();
+    console.log('🗑️ Notificações de mensagens limpas');
+  }
+
+  // 🆕 Obter ícone para notificação de mensagem
+  getMessageNotificationIcon(notification: NotificationMessage): string {
+    const messageData = notification.data;
+    if (messageData && messageData.type) {
+      switch (messageData.type) {
+        case 'SUCCESS':
+          return '✅';
+        case 'ERROR':
+          return '❌';
+        case 'WARNING':
+          return '⚠️';
+        case 'INFO':
+        default:
+          return '📨';
+      }
+    }
+    return '📨';
+  }
+
+  // 🆕 Obter classe CSS para notificação de mensagem
+  getMessageNotificationClass(notification: NotificationMessage): string {
+    const messageData = notification.data;
+    if (messageData && messageData.type) {
+      switch (messageData.type) {
+        case 'SUCCESS':
+          return 'alert-success';
+        case 'ERROR':
+          return 'alert-danger';
+        case 'WARNING':
+          return 'alert-warning';
+        case 'INFO':
+        default:
+          return 'alert-info';
+      }
+    }
+    return 'alert-info';
+  }
+
+  // 🆕 Formatar tempo da notificação de mensagem
+  formatMessageNotificationTime(notification: NotificationMessage): string {
+    const messageData = notification.data;
+    if (messageData && messageData.timestamp) {
+      return new Date(messageData.timestamp).toLocaleTimeString('pt-BR');
+    }
+    return new Date(notification.timestamp).toLocaleTimeString('pt-BR');
   }
 
   private loadInitialData(): void {
@@ -532,6 +641,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return '🔗';
       case 'INFO':
         return 'ℹ️';
+      case 'NEW_MESSAGE': // 🆕
+        return '📨';
       default:
         return '📢';
     }
@@ -547,6 +658,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return 'alert-info';
       case 'INFO':
         return 'alert-primary';
+      case 'NEW_MESSAGE': // 🆕
+        return 'alert-info';
       default:
         return 'alert-secondary';
     }

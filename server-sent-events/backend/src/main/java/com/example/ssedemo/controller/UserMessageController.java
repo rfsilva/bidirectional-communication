@@ -406,4 +406,79 @@ public class UserMessageController {
             ));
         }
     }
+
+    // 🆕 Endpoint para criar mensagem de teste com notificação SSE
+    @Operation(
+        summary = "Criar mensagem de teste (ADMIN)", 
+        description = "Cria uma mensagem de teste para um usuário específico e envia notificação SSE. Apenas para ADMIN."
+    )
+    @PostMapping("/test/{userId}")
+    public ResponseEntity<Map<String, Object>> createTestMessage(
+            @Parameter(description = "ID do usuário destinatário", required = true)
+            @PathVariable Long userId,
+            @RequestBody(required = false) Map<String, String> request,
+            Authentication authentication) {
+        
+        User currentUser = (User) authentication.getPrincipal();
+        
+        if (currentUser.getRole() != User.Role.ADMIN) {
+            return ResponseEntity.status(403).body(Map.of(
+                "status", "error",
+                "message", "Apenas administradores podem criar mensagens de teste"
+            ));
+        }
+        
+        try {
+            // Obter dados da requisição ou usar valores padrão
+            String title = request != null ? request.getOrDefault("title", "Mensagem de Teste") : "Mensagem de Teste";
+            String content = request != null ? request.getOrDefault("content", "Esta é uma mensagem de teste enviada pelo administrador.") : "Esta é uma mensagem de teste enviada pelo administrador.";
+            String typeStr = request != null ? request.getOrDefault("type", "INFO") : "INFO";
+            String priorityStr = request != null ? request.getOrDefault("priority", "NORMAL") : "NORMAL";
+            
+            UserMessage.MessageType type;
+            UserMessage.Priority priority;
+            
+            try {
+                type = UserMessage.MessageType.valueOf(typeStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                type = UserMessage.MessageType.INFO;
+            }
+            
+            try {
+                priority = UserMessage.Priority.valueOf(priorityStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                priority = UserMessage.Priority.NORMAL;
+            }
+            
+            // Criar mensagem de teste
+            UserMessage testMessage = externalMessageService.createCustomTestMessage(
+                userId, title, content, type, priority
+            );
+            
+            log.info("ADMIN {} criou mensagem de teste para usuário ID {}: {}", 
+                    currentUser.getUsername(), userId, title);
+            
+            return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "message", "Mensagem de teste criada e notificação SSE enviada",
+                "messageId", testMessage.getId(),
+                "title", testMessage.getTitle(),
+                "targetUserId", userId,
+                "timestamp", LocalDateTime.now()
+            ));
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "status", "error",
+                "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            log.error("Erro ao criar mensagem de teste", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "status", "error",
+                "message", "Erro interno do servidor",
+                "error", e.getMessage()
+            ));
+        }
+    }
 }

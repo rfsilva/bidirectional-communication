@@ -16,7 +16,7 @@ import java.util.Optional;
 
 /**
  * Serviço para gerenciamento de mensagens de usuários.
- * Implementa controle de acesso baseado em roles.
+ * Implementa controle de acesso baseado em roles e notificações SSE.
  */
 @Service
 @RequiredArgsConstructor
@@ -26,13 +26,21 @@ public class UserMessageService {
 
     private final UserMessageRepository userMessageRepository;
     private final UserRepository userRepository;
+    private final SSENotificationService sseNotificationService;
 
     /**
      * Cria uma nova mensagem para um usuário.
      */
     public UserMessage createMessage(UserMessage userMessage) {
         log.info("Criando nova mensagem para usuário ID: {}", userMessage.getUser().getId());
-        return userMessageRepository.save(userMessage);
+        UserMessage savedMessage = userMessageRepository.save(userMessage);
+        
+        // 🆕 Enviar notificação SSE se a mensagem não for externa (mensagens externas já enviam no ExternalMessageService)
+        if (!userMessage.getIsExternal()) {
+            sendMessageNotificationToUser(savedMessage);
+        }
+        
+        return savedMessage;
     }
 
     /**
@@ -58,7 +66,42 @@ public class UserMessageService {
         
         UserMessage userMessage = new UserMessage(title, content, type, priority, user, externalSource);
         log.info("Criando mensagem externa de '{}' para usuário: {}", externalSource, user.getUsername());
-        return createMessage(userMessage);
+        
+        // Para mensagens externas, salvamos sem enviar notificação aqui (será enviada no ExternalMessageService)
+        return userMessageRepository.save(userMessage);
+    }
+
+    /**
+     * 🆕 Envia notificação SSE individual para o usuário que recebeu uma nova mensagem.
+     */
+    private void sendMessageNotificationToUser(UserMessage userMessage) {
+        try {
+            User user = userMessage.getUser();
+            
+            // Verificar se o usuário tem conexões SSE ativas
+            int userConnections = sseNotificationService.getActiveConnectionsCountForUser(user.getId());
+            
+            if (userConnections > 0) {
+                // Enviar notificação SSE individual
+                sseNotificationService.sendNewMessageNotification(
+                    user.getId(),
+                    userMessage.getTitle(),
+                    userMessage.getContent(),
+                    userMessage.getType().name(),
+                    userMessage.getId()
+                );
+                
+                log.info("🔔 Notificação SSE enviada para usuário {} (ID: {}) - {} conexões ativas", 
+                        user.getUsername(), user.getId(), userConnections);
+            } else {
+                log.debug("📱 Usuário {} (ID: {}) não tem conexões SSE ativas - notificação não enviada", 
+                         user.getUsername(), user.getId());
+            }
+            
+        } catch (Exception e) {
+            log.error("❌ Erro ao enviar notificação SSE para mensagem ID {}: {}", 
+                     userMessage.getId(), e.getMessage());
+        }
     }
 
     /**
@@ -275,6 +318,26 @@ public class UserMessageService {
                 .warningMessages(userMessageRepository.countByUserIdAndType(currentUser.getId(), UserMessage.MessageType.WARNING))
                 .errorMessages(userMessageRepository.countByUserIdAndType(currentUser.getId(), UserMessage.MessageType.ERROR))
                 .build();
+    }
+
+    /**
+     * 🆕 Cria uma mensagem de teste e envia notificação SSE.
+     */
+    public UserMessage createTestMessageWithNotification(Long userId, String title, String content, 
+                                                       UserMessage.MessageType type, UserMessage.Priority priority) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado: " + userId));
+        
+        UserMessage userMessage = new UserMessage(title, content, type, priority, user, "TEST_SYSTEM");
+        UserMessage savedMessage = userMessageRepository.save(userMessage);
+        
+        // Enviar notificação SSE
+        sendMessageNotificationToUser(savedMessage);
+        
+        log.info("📨 Mensagem de teste criada e notificação enviada para usuário {} (ID: {}): {}", 
+                user.getUsername(), userId, title);
+        
+        return savedMessage;
     }
 
     /**

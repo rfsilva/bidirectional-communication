@@ -1,5 +1,60 @@
-<!-- CORRIGIDO: Template com verificações de null -->
+<!-- CORRIGIDO: Template com verificações de null e notificações SSE -->
 <div class="message-list-container">
+  
+  <!-- 🆕 Status da conexão SSE e notificações -->
+  <div class="sse-status-bar">
+    <div class="sse-connection" [class.connected]="isSSEConnected" [class.disconnected]="!isSSEConnected">
+      <span class="status-dot"></span>
+      {{ isSSEConnected ? 'Conectado - Recebendo notificações' : 'Desconectado - Sem notificações' }}
+    </div>
+    
+    <!-- 🆕 Badge de notificações de mensagens -->
+    <div class="notification-badge" *ngIf="unreadNotificationCount > 0" (click)="markNotificationsAsRead()">
+      <span class="badge-count">{{ unreadNotificationCount }}</span>
+      <span>{{ unreadNotificationCount === 1 ? 'Nova notificação' : 'Novas notificações' }}</span>
+    </div>
+  </div>
+
+  <!-- 🆕 Painel de notificações recentes -->
+  <div class="notifications-panel" *ngIf="messageNotifications.length > 0">
+    <div class="panel-header">
+      <h6>📨 Notificações Recentes</h6>
+      <div class="panel-actions">
+        <button class="btn btn-sm btn-outline-primary" (click)="markNotificationsAsRead()" *ngIf="unreadNotificationCount > 0">
+          Marcar Lidas
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" (click)="clearNotifications()">
+          Limpar
+        </button>
+      </div>
+    </div>
+    
+    <div class="notifications-list">
+      <div *ngFor="let notification of messageNotifications; let i = index" class="notification-item">
+        <div class="alert py-2 px-3 mb-2" [ngClass]="getNotificationClass(notification)">
+          <div class="d-flex align-items-start">
+            <span class="me-2">{{ getNotificationIcon(notification) }}</span>
+            <div class="flex-grow-1">
+              <div class="fw-bold small">{{ notification.data?.title || 'Nova Mensagem' }}</div>
+              <div class="small text-truncate" style="max-width: 300px;">
+                {{ notification.data?.content || notification.message }}
+              </div>
+              <div class="text-muted d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
+                <span>{{ formatNotificationTime(notification) }}</span>
+                <span class="badge" 
+                      [class.bg-success]="notification.data?.type === 'SUCCESS'"
+                      [class.bg-danger]="notification.data?.type === 'ERROR'"
+                      [class.bg-warning]="notification.data?.type === 'WARNING'"
+                      [class.bg-info]="notification.data?.type === 'INFO' || !notification.data?.type">
+                  {{ notification.data?.type || 'INFO' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   
   <!-- Header com estatísticas -->
   <div class="stats-header">
@@ -185,6 +240,7 @@
         [class.unread]="!message.isRead"
         [class.high-priority]="MessageUtils.isHighPriority(message)"
         [class.external]="message.isExternal"
+        [attr.data-message-id]="message.id"
         (click)="selectMessage(message)">
         
         <!-- Header da mensagem -->

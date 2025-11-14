@@ -70,10 +70,19 @@
     {{ isConnected ? 'SSE Conectado' : 'SSE Desconectado' }}
   </div>
 
-  <!-- Notification Badge -->
-  <div class="notification-badge" *ngIf="unreadCount > 0" (click)="refreshData()">
-    <span class="badge-count">{{ unreadCount }}</span>
-    <span>{{ unreadCount === 1 ? 'Nova atualização' : 'Novas atualizações' }}</span>
+  <!-- Notification Badges -->
+  <div class="d-flex gap-2 mb-3">
+    <!-- Badge para notificações gerais -->
+    <div class="notification-badge" *ngIf="unreadCount > 0" (click)="refreshData()">
+      <span class="badge-count">{{ unreadCount }}</span>
+      <span>{{ unreadCount === 1 ? 'Nova atualização' : 'Novas atualizações' }}</span>
+    </div>
+
+    <!-- 🆕 Badge para notificações de mensagens -->
+    <div class="notification-badge message-badge" *ngIf="unreadMessageCount > 0" (click)="markMessageNotificationsAsRead()">
+      <span class="badge-count">{{ unreadMessageCount }}</span>
+      <span>{{ unreadMessageCount === 1 ? 'Nova mensagem' : 'Novas mensagens' }}</span>
+    </div>
   </div>
 
   <!-- I18N Info -->
@@ -466,48 +475,142 @@
 
     <!-- Right Column - Notifications -->
     <div class="col-lg-4">
+      <!-- 🆕 Abas para diferentes tipos de notificações -->
       <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">
-            Notificações SSE
-            <span class="badge bg-primary ms-2" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
-          </h5>
-          <button 
-            class="btn btn-outline-secondary btn-sm"
-            (click)="clearNotifications()"
-            *ngIf="notifications.length > 0">
-            Limpar
-          </button>
+        <div class="card-header">
+          <ul class="nav nav-tabs card-header-tabs mb-0">
+            <li class="nav-item">
+              <a class="nav-link active" 
+                 data-bs-toggle="tab" 
+                 href="#general-notifications"
+                 style="cursor: pointer;">
+                📢 Gerais
+                <span class="badge bg-primary ms-1" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" 
+                 data-bs-toggle="tab" 
+                 href="#message-notifications"
+                 style="cursor: pointer;">
+                📨 Mensagens
+                <span class="badge bg-info ms-1" *ngIf="unreadMessageCount > 0">{{ unreadMessageCount }}</span>
+              </a>
+            </li>
+          </ul>
         </div>
-        <div class="card-body" style="max-height: 600px; overflow-y: auto;">
-          <!-- No Notifications -->
-          <div class="text-center text-muted py-4" *ngIf="notifications.length === 0">
-            <div class="mb-3">🔔</div>
-            <p>Nenhuma notificação ainda</p>
-            <small>As notificações aparecerão aqui em tempo real</small>
-            <div class="mt-2">
-              <small class="text-info">
-                💬 Mensagens virão em {{ languageName }} ({{ currentLanguage }})
-              </small>
+        
+        <div class="tab-content">
+          <!-- Aba de Notificações Gerais -->
+          <div class="tab-pane fade show active" id="general-notifications">
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Notificações SSE</h6>
+                <button 
+                  class="btn btn-outline-secondary btn-sm"
+                  (click)="clearNotifications()"
+                  *ngIf="notifications.length > 0">
+                  Limpar
+                </button>
+              </div>
+
+              <!-- No Notifications -->
+              <div class="text-center text-muted py-4" *ngIf="notifications.length === 0">
+                <div class="mb-3">🔔</div>
+                <p>Nenhuma notificação ainda</p>
+                <small>As notificações aparecerão aqui em tempo real</small>
+                <div class="mt-2">
+                  <small class="text-info">
+                    💬 Mensagens virão em {{ languageName }} ({{ currentLanguage }})
+                  </small>
+                </div>
+              </div>
+
+              <!-- Notifications List -->
+              <div *ngFor="let notification of notifications; let i = index" class="mb-3">
+                <div class="alert py-2 px-3 mb-2" [ngClass]="getNotificationClass(notification.type)">
+                  <div class="d-flex align-items-start">
+                    <span class="me-2">{{ getNotificationIcon(notification.type) }}</span>
+                    <div class="flex-grow-1">
+                      <div class="fw-bold small">{{ notification.type }}</div>
+                      <div class="small">{{ notification.message }}</div>
+                      <div class="text-muted" style="font-size: 0.75rem;">
+                        {{ formatDate(notification.timestamp) }}
+                      </div>
+                      <div *ngIf="notification.data" class="mt-1">
+                        <small class="text-muted">
+                          <strong>Dados:</strong> 
+                          <code>{{ notification.data | json }}</code>
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Notifications List -->
-          <div *ngFor="let notification of notifications; let i = index" class="mb-3">
-            <div class="alert py-2 px-3 mb-2" [ngClass]="getNotificationClass(notification.type)">
-              <div class="d-flex align-items-start">
-                <span class="me-2">{{ getNotificationIcon(notification.type) }}</span>
-                <div class="flex-grow-1">
-                  <div class="fw-bold small">{{ notification.type }}</div>
-                  <div class="small">{{ notification.message }}</div>
-                  <div class="text-muted" style="font-size: 0.75rem;">
-                    {{ formatDate(notification.timestamp) }}
-                  </div>
-                  <div *ngIf="notification.data" class="mt-1">
-                    <small class="text-muted">
-                      <strong>Dados:</strong> 
-                      <code>{{ notification.data | json }}</code>
-                    </small>
+          <!-- 🆕 Aba de Notificações de Mensagens -->
+          <div class="tab-pane fade" id="message-notifications">
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Mensagens Recebidas</h6>
+                <div>
+                  <button 
+                    class="btn btn-outline-primary btn-sm me-2"
+                    (click)="markMessageNotificationsAsRead()"
+                    *ngIf="unreadMessageCount > 0">
+                    Marcar Lidas
+                  </button>
+                  <button 
+                    class="btn btn-outline-secondary btn-sm"
+                    (click)="clearMessageNotifications()"
+                    *ngIf="messageNotifications.length > 0">
+                    Limpar
+                  </button>
+                </div>
+              </div>
+
+              <!-- No Message Notifications -->
+              <div class="text-center text-muted py-4" *ngIf="messageNotifications.length === 0">
+                <div class="mb-3">📨</div>
+                <p>Nenhuma mensagem ainda</p>
+                <small>As notificações de mensagens aparecerão aqui</small>
+                <div class="mt-2">
+                  <small class="text-info">
+                    💡 Você receberá notificações quando mensagens forem direcionadas para você
+                  </small>
+                </div>
+              </div>
+
+              <!-- Message Notifications List -->
+              <div *ngFor="let notification of messageNotifications; let i = index" class="mb-3">
+                <div class="alert py-2 px-3 mb-2" [ngClass]="getMessageNotificationClass(notification)">
+                  <div class="d-flex align-items-start">
+                    <span class="me-2">{{ getMessageNotificationIcon(notification) }}</span>
+                    <div class="flex-grow-1">
+                      <div class="fw-bold small">
+                        {{ notification.data?.title || 'Nova Mensagem' }}
+                      </div>
+                      <div class="small text-truncate" style="max-width: 250px;">
+                        {{ notification.data?.content || notification.message }}
+                      </div>
+                      <div class="text-muted d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
+                        <span>{{ formatMessageNotificationTime(notification) }}</span>
+                        <span class="badge" 
+                              [class.bg-success]="notification.data?.type === 'SUCCESS'"
+                              [class.bg-danger]="notification.data?.type === 'ERROR'"
+                              [class.bg-warning]="notification.data?.type === 'WARNING'"
+                              [class.bg-info]="notification.data?.type === 'INFO' || !notification.data?.type">
+                          {{ notification.data?.type || 'INFO' }}
+                        </span>
+                      </div>
+                      <div *ngIf="notification.data?.messageId" class="mt-1">
+                        <small class="text-muted">
+                          ID: {{ notification.data.messageId }}
+                        </small>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

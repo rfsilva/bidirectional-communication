@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MessageService } from '../../services/message.service';
 import { AuthService } from '../../services/auth.service';
+import { SSEService } from '../../services/sse.service'; // 🆕 Importar SSEService
 import { 
   Message, 
   MessageType, 
@@ -14,6 +15,7 @@ import {
   MessageStats 
 } from '../../models/message.model';
 import { UserRole } from '../../models/auth.model';
+import { NotificationMessage } from '../../models/data-entity.model'; // 🆕 Importar NotificationMessage
 
 @Component({
   selector: 'app-message-list',
@@ -33,6 +35,11 @@ export class MessageListComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
   selectedMessage: Message | null = null;
+  
+  // 🆕 Notificações SSE
+  messageNotifications: NotificationMessage[] = [];
+  unreadNotificationCount = 0;
+  isSSEConnected = false;
   
   // Filtros
   currentFilter: MessageFilter = {};
@@ -65,23 +72,162 @@ export class MessageListComponent implements OnInit, OnDestroy {
   constructor(
     private messageService: MessageService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private sseService: SSEService // 🆕 Injetar SSEService
   ) {}
 
   ngOnInit(): void {
     this.loadMessages();
     this.loadStats();
-    
+    this.setupSubscriptions();
+    this.initializeSSE(); // 🆕 Inicializar SSE
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  // 🆕 Inicializar conexão SSE
+  private initializeSSE(): void {
+    // Verificar se já está conectado
+    if (!this.sseService.isConnected()) {
+      this.sseService.connect();
+    }
+  }
+
+  private setupSubscriptions(): void {
     // Escutar atualizações de mensagens
     const messagesUpdatedSub = this.messageService.messagesUpdated$.subscribe(() => {
       this.loadMessages();
       this.loadStats();
     });
     this.subscriptions.push(messagesUpdatedSub);
+
+    // 🆕 Escutar status da conexão SSE
+    const sseStatusSub = this.sseService.connectionStatus$.subscribe(status => {
+      this.isSSEConnected = status;
+    });
+    this.subscriptions.push(sseStatusSub);
+
+    // 🆕 Escutar notificações específicas de mensagens
+    const messageNotificationsSub = this.sseService.messageNotifications$.subscribe(notification => {
+      if (notification) {
+        this.handleMessageNotification(notification);
+      }
+    });
+    this.subscriptions.push(messageNotificationsSub);
   }
 
-  ngOnDestroy(): void {
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+  // 🆕 Manipular notificações de mensagens recebidas via SSE
+  private handleMessageNotification(notification: NotificationMessage): void {
+    console.log('📨 MessageList: Nova notificação de mensagem recebida:', notification);
+    
+    // Adicionar à lista de notificações
+    this.messageNotifications.unshift(notification);
+    
+    // Manter apenas as últimas 5 notificações na tela de mensagens
+    if (this.messageNotifications.length > 5) {
+      this.messageNotifications = this.messageNotifications.slice(0, 5);
+    }
+    
+    // Incrementar contador
+    this.unreadNotificationCount++;
+    
+    // Recarregar mensagens para mostrar a nova mensagem na lista
+    setTimeout(() => {
+      this.loadMessages();
+    }, 1000);
+    
+    // Mostrar notificação visual
+    this.showNotificationToast(notification);
+  }
+
+  // 🆕 Mostrar toast de notificação
+  private showNotificationToast(notification: NotificationMessage): void {
+    const messageData = notification.data;
+    if (messageData && messageData.title) {
+      console.log(`🔔 Nova mensagem na tela: ${messageData.title}`);
+      
+      // Aqui você pode implementar um toast mais sofisticado
+      // Por enquanto, apenas destacar visualmente
+      this.highlightNewMessage(messageData.messageId);
+    }
+  }
+
+  // 🆕 Destacar nova mensagem na lista
+  private highlightNewMessage(messageId: number): void {
+    // Aguardar a lista ser recarregada e então destacar a mensagem
+    setTimeout(() => {
+      const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+      if (messageElement) {
+        messageElement.classList.add('new-message-highlight');
+        
+        // Remover destaque após 3 segundos
+        setTimeout(() => {
+          messageElement.classList.remove('new-message-highlight');
+        }, 3000);
+      }
+    }, 1500);
+  }
+
+  // 🆕 Marcar notificações como lidas
+  markNotificationsAsRead(): void {
+    this.unreadNotificationCount = 0;
+    console.log('✅ Notificações de mensagens marcadas como lidas na tela de mensagens');
+  }
+
+  // 🆕 Limpar notificações
+  clearNotifications(): void {
+    this.messageNotifications = [];
+    this.unreadNotificationCount = 0;
+    console.log('🗑️ Notificações de mensagens limpas na tela de mensagens');
+  }
+
+  // 🆕 Obter ícone para notificação
+  getNotificationIcon(notification: NotificationMessage): string {
+    const messageData = notification.data;
+    if (messageData && messageData.type) {
+      switch (messageData.type) {
+        case 'SUCCESS':
+          return '✅';
+        case 'ERROR':
+          return '❌';
+        case 'WARNING':
+          return '⚠️';
+        case 'INFO':
+        default:
+          return '📨';
+      }
+    }
+    return '📨';
+  }
+
+  // 🆕 Obter classe CSS para notificação
+  getNotificationClass(notification: NotificationMessage): string {
+    const messageData = notification.data;
+    if (messageData && messageData.type) {
+      switch (messageData.type) {
+        case 'SUCCESS':
+          return 'alert-success';
+        case 'ERROR':
+          return 'alert-danger';
+        case 'WARNING':
+          return 'alert-warning';
+        case 'INFO':
+        default:
+          return 'alert-info';
+      }
+    }
+    return 'alert-info';
+  }
+
+  // 🆕 Formatar tempo da notificação
+  formatNotificationTime(notification: NotificationMessage): string {
+    const messageData = notification.data;
+    if (messageData && messageData.timestamp) {
+      return new Date(messageData.timestamp).toLocaleTimeString('pt-BR');
+    }
+    return new Date(notification.timestamp).toLocaleTimeString('pt-BR');
   }
 
   /**

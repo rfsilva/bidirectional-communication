@@ -12,6 +12,10 @@ export class SSEService {
   
   private notificationsSubject = new BehaviorSubject<NotificationMessage | null>(null);
   private connectionStatusSubject = new BehaviorSubject<boolean>(false);
+  
+  // 🆕 Subject específico para notificações de mensagens
+  private messageNotificationsSubject = new BehaviorSubject<NotificationMessage | null>(null);
+  
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 3000;
@@ -19,6 +23,9 @@ export class SSEService {
 
   public notifications$ = this.notificationsSubject.asObservable();
   public connectionStatus$ = this.connectionStatusSubject.asObservable();
+  
+  // 🆕 Observable específico para notificações de mensagens
+  public messageNotifications$ = this.messageNotificationsSubject.asObservable();
 
   constructor(
     private ngZone: NgZone,
@@ -192,6 +199,7 @@ export class SSEService {
   private setupEventListeners(): void {
     if (!this.eventSource) return;
 
+    // Eventos existentes
     const eventTypes = ['connection', 'dataUpdate', 'error', 'info'];
     
     eventTypes.forEach(eventType => {
@@ -206,6 +214,30 @@ export class SSEService {
             console.error(`❌ SSE: Erro ao processar evento '${eventType}':`, error);
           }
         });
+      });
+    });
+
+    // 🆕 Listener específico para notificações de mensagens
+    this.eventSource.addEventListener('newMessage', (event: Event) => {
+      this.ngZone.run(() => {
+        try {
+          const messageEvent = event as MessageEvent;
+          console.log('📨 SSE: Nova mensagem recebida:', messageEvent.data);
+          const message: NotificationMessage = JSON.parse(messageEvent.data);
+          
+          // Emitir tanto no canal geral quanto no específico de mensagens
+          this.notificationsSubject.next(message);
+          this.messageNotificationsSubject.next(message);
+          
+          console.log('🔔 SSE: Notificação de nova mensagem processada:', {
+            type: message.type,
+            message: message.message,
+            data: message.data
+          });
+          
+        } catch (error) {
+          console.error('❌ SSE: Erro ao processar notificação de nova mensagem:', error);
+        }
       });
     });
   }
@@ -262,6 +294,16 @@ export class SSEService {
     this.reconnectDelay = 3000;
     this.disconnect();
     setTimeout(() => this.connect(), 1000);
+  }
+
+  // 🆕 Método para obter apenas notificações de mensagens
+  getMessageNotifications(): Observable<NotificationMessage | null> {
+    return this.messageNotifications$;
+  }
+
+  // 🆕 Método para limpar notificações de mensagens
+  clearMessageNotifications(): void {
+    this.messageNotificationsSubject.next(null);
   }
 
   // Método para debug - mostra informações detalhadas
