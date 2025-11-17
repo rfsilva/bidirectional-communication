@@ -1,0 +1,414 @@
+<!-- CORRIGIDO: Template com verificações de null e notificações WebSocket -->
+<div class="message-list-container">
+  
+  <!-- 🆕 Status da conexão WebSocket e notificações -->
+  <div class="sse-status-bar">
+    <div class="sse-connection" [class.connected]="isSSEConnected" [class.disconnected]="!isSSEConnected">
+      <span class="status-dot"></span>
+      {{ isSSEConnected ? 'Conectado - Recebendo notificações' : 'Desconectado - Sem notificações' }}
+    </div>
+    
+    <!-- 🆕 Badge de notificações de mensagens -->
+    <div class="notification-badge" *ngIf="unreadNotificationCount > 0" (click)="markNotificationsAsRead()">
+      <span class="badge-count">{{ unreadNotificationCount }}</span>
+      <span>{{ unreadNotificationCount === 1 ? 'Nova notificação' : 'Novas notificações' }}</span>
+    </div>
+  </div>
+
+  <!-- 🆕 Painel de notificações recentes -->
+  <div class="notifications-panel" *ngIf="messageNotifications.length > 0">
+    <div class="panel-header">
+      <h6>📨 Notificações Recentes</h6>
+      <div class="panel-actions">
+        <button class="btn btn-sm btn-outline-primary" (click)="markNotificationsAsRead()" *ngIf="unreadNotificationCount > 0">
+          Marcar Lidas
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" (click)="clearNotifications()">
+          Limpar
+        </button>
+      </div>
+    </div>
+    
+    <div class="notifications-list">
+      <div *ngFor="let notification of messageNotifications; let i = index" class="notification-item">
+        <div class="alert py-2 px-3 mb-2" [ngClass]="getNotificationClass(notification)">
+          <div class="d-flex align-items-start">
+            <span class="me-2">{{ getNotificationIcon(notification) }}</span>
+            <div class="flex-grow-1">
+              <div class="fw-bold small">{{ notification.data?.title || 'Nova Mensagem' }}</div>
+              <div class="small text-truncate" style="max-width: 300px;">
+                {{ notification.data?.content || notification.message }}
+              </div>
+              <div class="text-muted d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
+                <span>{{ formatNotificationTime(notification) }}</span>
+                <span class="badge" 
+                      [class.bg-success]="notification.data?.type === 'SUCCESS'"
+                      [class.bg-danger]="notification.data?.type === 'ERROR'"
+                      [class.bg-warning]="notification.data?.type === 'WARNING'"
+                      [class.bg-info]="notification.data?.type === 'INFO' || !notification.data?.type">
+                  {{ notification.data?.type || 'INFO' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Header com estatísticas -->
+  <div class="stats-header">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{ stats?.totalMessages || 0 }}</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card unread">
+        <div class="stat-value">{{ stats?.unreadMessages || 0 }}</div>
+        <div class="stat-label">Não lidas</div>
+      </div>
+      <div class="stat-card external" *ngIf="stats?.externalMessages !== undefined">
+        <div class="stat-value">{{ stats?.externalMessages || 0 }}</div>
+        <div class="stat-label">Externas</div>
+      </div>
+      <div class="stat-card internal" *ngIf="stats?.internalMessages !== undefined">
+        <div class="stat-value">{{ stats?.internalMessages || 0 }}</div>
+        <div class="stat-label">Internas</div>
+      </div>
+    </div>
+    
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="createNewMessage()">
+        <i class="fas fa-plus"></i> Nova Mensagem
+      </button>
+      <button 
+        class="btn btn-secondary" 
+        (click)="forceExternalFetch()" 
+        *ngIf="canManageMessages()"
+        title="Buscar mensagens externas">
+        <i class="fas fa-sync"></i> Buscar Externas
+      </button>
+      <button 
+        class="btn btn-info" 
+        (click)="markAllAsRead()" 
+        *ngIf="(stats?.unreadMessages || 0) > 0"
+        title="Marcar todas como lidas">
+        <i class="fas fa-check-double"></i> Marcar Todas Lidas
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-section">
+    <div class="filters-grid">
+      
+      <!-- Busca por texto -->
+      <div class="filter-group">
+        <label>Buscar:</label>
+        <input 
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          (input)="applyFilters()"
+          placeholder="Título ou conteúdo..."
+          class="form-control">
+      </div>
+
+      <!-- Filtro por tipo -->
+      <div class="filter-group">
+        <label>Tipo:</label>
+        <select 
+          [(ngModel)]="selectedType" 
+          (change)="applyFilters()"
+          class="form-control">
+          <option value="">Todos os tipos</option>
+          <option *ngFor="let type of messageTypes" [value]="type">
+            {{ MessageUtils.getTypeDisplayName(type) }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Filtro por prioridade -->
+      <div class="filter-group">
+        <label>Prioridade:</label>
+        <select 
+          [(ngModel)]="selectedPriority" 
+          (change)="applyFilters()"
+          class="form-control">
+          <option value="">Todas as prioridades</option>
+          <option *ngFor="let priority of priorities" [value]="priority">
+            {{ MessageUtils.getPriorityDisplayName(priority) }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Filtro por fonte externa -->
+      <div class="filter-group">
+        <label>Fonte:</label>
+        <select 
+          [(ngModel)]="selectedSource" 
+          (change)="applyFilters()"
+          class="form-control">
+          <option value="">Todas as fontes</option>
+          <option *ngFor="let source of getExternalSources()" [value]="source">
+            {{ formatExternalSource(source) }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Filtros de checkbox -->
+    <div class="checkbox-filters">
+      <label class="checkbox-label">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="showUnreadOnly" 
+          (change)="applyFilters()">
+        Apenas não lidas
+      </label>
+      
+      <label class="checkbox-label">
+        <input 
+          type="checkbox" 
+          [(ngModel)]="showExternalOnly" 
+          (change)="applyFilters()">
+        Apenas externas
+      </label>
+    </div>
+
+    <!-- Ordenação -->
+    <div class="sort-section">
+      <label>Ordenar por:</label>
+      <select 
+        [(ngModel)]="sortBy" 
+        (change)="applyFilters()"
+        class="form-control">
+        <option value="date">Data</option>
+        <option value="priority">Prioridade</option>
+        <option value="type">Tipo</option>
+      </select>
+      
+      <button 
+        class="btn btn-sm" 
+        [class.btn-primary]="sortOrder === 'desc'"
+        [class.btn-secondary]="sortOrder === 'asc'"
+        (click)="sortOrder = sortOrder === 'desc' ? 'asc' : 'desc'; applyFilters()"
+        title="Alterar ordem">
+        <i class="fas" [class.fa-sort-down]="sortOrder === 'desc'" [class.fa-sort-up]="sortOrder === 'asc'"></i>
+      </button>
+    </div>
+
+    <!-- Botão limpar filtros -->
+    <div class="filter-actions">
+      <button class="btn btn-outline-secondary btn-sm" (click)="clearFilters()">
+        <i class="fas fa-times"></i> Limpar Filtros
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading">
+    <i class="fas fa-spinner fa-spin"></i> Carregando mensagens...
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="error-message">
+    <i class="fas fa-exclamation-triangle"></i>
+    {{ error }}
+    <button class="btn btn-sm btn-primary" (click)="loadMessages()">
+      <i class="fas fa-redo"></i> Tentar Novamente
+    </button>
+  </div>
+
+  <!-- Lista de mensagens -->
+  <div *ngIf="!loading && !error" class="messages-section">
+    
+    <!-- Informações da lista -->
+    <div class="list-info">
+      <span>
+        Mostrando {{ getCurrentPageMessages().length }} de {{ filteredMessages.length }} mensagens
+        <span *ngIf="filteredMessages.length !== messages.length">
+          ({{ messages.length }} no total)
+        </span>
+      </span>
+    </div>
+
+    <!-- Lista -->
+    <div class="messages-list" *ngIf="getCurrentPageMessages().length > 0">
+      <div 
+        *ngFor="let message of getCurrentPageMessages()" 
+        class="message-card"
+        [class.unread]="!message.isRead"
+        [class.high-priority]="MessageUtils.isHighPriority(message)"
+        [class.external]="message.isExternal"
+        [attr.data-message-id]="message.id"
+        (click)="selectMessage(message)">
+        
+        <!-- Header da mensagem -->
+        <div class="message-header">
+          <div class="message-meta">
+            <div class="message-type" [style.color]="getTypeColor(message.type)">
+              <i class="fas" [class]="'fa-' + getTypeIcon(message.type)"></i>
+              {{ MessageUtils.getTypeDisplayName(message.type) }}
+            </div>
+            <div class="message-priority" [style.color]="getPriorityColor(message.priority)">
+              <i class="fas" [class]="'fa-' + getPriorityIcon(message.priority)"></i>
+              {{ MessageUtils.getPriorityDisplayName(message.priority) }}
+            </div>
+          </div>
+          
+          <div class="message-actions">
+            <button 
+              class="btn-action" 
+              (click)="toggleMessageRead(message); $event.stopPropagation()"
+              [title]="message.isRead ? 'Marcar como não lida' : 'Marcar como lida'">
+              <i class="fas" [class.fa-eye]="!message.isRead" [class.fa-eye-slash]="message.isRead"></i>
+            </button>
+            
+            <button 
+              *ngIf="canEditMessage(message)"
+              class="btn-action" 
+              (click)="editMessage(message); $event.stopPropagation()"
+              title="Editar mensagem">
+              <i class="fas fa-edit"></i>
+            </button>
+            
+            <button 
+              *ngIf="canDeleteMessage(message)"
+              class="btn-action btn-danger" 
+              (click)="deleteMessage(message); $event.stopPropagation()"
+              title="Excluir mensagem">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Conteúdo da mensagem -->
+        <div class="message-content">
+          <h4 class="message-title">{{ message.title }}</h4>
+          <p class="message-text">{{ message.content.substring(0, 150) }}<span *ngIf="message.content.length > 150">...</span></p>
+          
+          <div class="message-footer">
+            <div class="message-user">
+              <div class="user-avatar">
+                {{ getMessageUserInitials(message) }}
+              </div>
+              <span>{{ getMessageUserName(message) }}</span>
+            </div>
+            
+            <div class="message-info">
+              <span class="message-date">{{ getMessageAge(message) }}</span>
+              <span *ngIf="message.isExternal" class="external-badge">
+                {{ formatExternalSource(message.externalSource) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mensagem vazia -->
+    <div *ngIf="getCurrentPageMessages().length === 0" class="empty-state">
+      <i class="fas fa-inbox fa-3x"></i>
+      <h3>Nenhuma mensagem encontrada</h3>
+      <p *ngIf="searchTerm || selectedType || selectedPriority || showUnreadOnly || showExternalOnly">
+        Tente ajustar os filtros para ver mais mensagens.
+      </p>
+      <p *ngIf="!searchTerm && !selectedType && !selectedPriority && !showUnreadOnly && !showExternalOnly">
+        Você ainda não tem mensagens.
+      </p>
+      <button class="btn btn-primary" (click)="createNewMessage()">
+        <i class="fas fa-plus"></i> Criar Primeira Mensagem
+      </button>
+    </div>
+
+    <!-- Paginação -->
+    <div *ngIf="totalPages > 1" class="pagination">
+      <button 
+        class="btn btn-sm" 
+        [disabled]="currentPage === 1"
+        (click)="goToPage(currentPage - 1)">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      
+      <span class="page-info">
+        Página {{ currentPage }} de {{ totalPages }}
+      </span>
+      
+      <button 
+        class="btn btn-sm" 
+        [disabled]="currentPage === totalPages"
+        (click)="goToPage(currentPage + 1)">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de detalhes da mensagem -->
+<div *ngIf="selectedMessage" class="message-modal-overlay" (click)="closeMessageDetail()">
+  <div class="message-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="message-badges">
+        <div class="message-type-detail" [style.background-color]="getTypeColor(selectedMessage.type)">
+          <i class="fas" [class]="'fa-' + getTypeIcon(selectedMessage.type)"></i>
+          {{ MessageUtils.getTypeDisplayName(selectedMessage.type) }}
+        </div>
+        <div class="message-priority-detail" [style.background-color]="getPriorityColor(selectedMessage.priority)">
+          <i class="fas" [class]="'fa-' + getPriorityIcon(selectedMessage.priority)"></i>
+          {{ MessageUtils.getPriorityDisplayName(selectedMessage.priority) }}
+        </div>
+      </div>
+      
+      <button class="btn-close" (click)="closeMessageDetail()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-content">
+      <h3>{{ selectedMessage.title }}</h3>
+      
+      <div class="message-details">
+        <div class="detail-item">
+          <strong>Data:</strong> {{ formatDate(selectedMessage.createdAt) }}
+        </div>
+        <div class="detail-item" *ngIf="selectedMessage.isExternal">
+          <strong>Fonte:</strong> {{ formatExternalSource(selectedMessage.externalSource) }}
+        </div>
+        <div class="detail-item">
+          <strong>Usuário:</strong> {{ getMessageUserName(selectedMessage) }} ({{ selectedMessage.username }})
+        </div>
+        <div class="detail-item" *ngIf="selectedMessage.readAt">
+          <strong>Lida em:</strong> {{ formatDate(selectedMessage.readAt) }}
+        </div>
+      </div>
+
+      <div class="message-full-content">
+        <p>{{ selectedMessage.content }}</p>
+      </div>
+
+      <div class="modal-actions">
+        <button 
+          class="btn btn-secondary"
+          (click)="toggleMessageRead(selectedMessage)"
+          [title]="selectedMessage.isRead ? 'Marcar como não lida' : 'Marcar como lida'">
+          <i class="fas" [class.fa-eye]="!selectedMessage.isRead" [class.fa-eye-slash]="selectedMessage.isRead"></i>
+          {{ selectedMessage.isRead ? 'Marcar como não lida' : 'Marcar como lida' }}
+        </button>
+        
+        <button 
+          *ngIf="canEditMessage(selectedMessage)"
+          class="btn btn-primary"
+          (click)="editMessage(selectedMessage)">
+          <i class="fas fa-edit"></i> Editar
+        </button>
+        
+        <button 
+          *ngIf="canDeleteMessage(selectedMessage)"
+          class="btn btn-danger"
+          (click)="deleteMessage(selectedMessage)">
+          <i class="fas fa-trash"></i> Excluir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

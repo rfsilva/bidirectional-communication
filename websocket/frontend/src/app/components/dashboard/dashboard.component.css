@@ -1,0 +1,632 @@
+/* Dashboard specific styles */
+.display-4 {
+  font-weight: 300;
+  color: #495057;
+}
+
+.stats-card {
+  transition: transform 0.2s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+}
+
+.nav-tabs .nav-link {
+  border: none;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: #007bff;
+  color: white;
+  border-radius: 6px 6px 0 0;
+}
+
+.nav-tabs .nav-link:hover:not(.active) {
+  background-color: #f8f9fa;
+  border-color: transparent;
+}
+
+.data-item {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 15px;
+  background: white;
+  border: 1px solid #e9ecef;
+  margin-bottom: 15px;
+}
+
+.data-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.data-item.external {
+  border-left: 4px solid #28a745;
+  background: linear-gradient(135deg, #ffffff, #f8fff9);
+}
+
+.data-item.internal {
+  border-left: 4px solid #007bff;
+  background: linear-gradient(135deg, #ffffff, #f8fbff);
+}
+
+/* NOVO: Estilos de Paginação */
+.pagination-controls {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e9ecef;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+}
+
+.page-info {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.pagination {
+  margin: 0;
+}
+
+.page-link {
+  color: #007bff;
+  background-color: #fff;
+  border: 1px solid #dee2e6;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.page-link:hover {
+  color: #0056b3;
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+  transform: translateY(-1px);
+}
+
+.page-link:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+.page-item.active .page-link {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: #fff;
+  font-weight: 600;
+}
+
+.page-item.disabled .page-link {
+  color: #6c757d;
+  background-color: #fff;
+  border-color: #dee2e6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.items-per-page {
+  display: flex;
+  align-items: center;
+}
+
+.items-per-page .form-select {
+  min-width: 70px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Responsividade da paginação */
+@media (max-width: 768px) {
+  .pagination-controls .d-flex {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch !important;
+  }
+
+  .pagination {
+    justify-content: center;
+  }
+
+  .items-per-page {
+    justify-content: center;
+  }
+
+  .page-info {
+    text-align: center;
+  }
+
+  .pagination-info {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .pagination .page-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .pagination-controls .d-flex {
+    gap: 10px;
+  }
+}
+
+/* Melhorias nos cards de dados */
+.data-item h6 {
+  color: #495057;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.data-item p {
+  color: #6c757d;
+  margin-bottom: 5px;
+}
+
+.data-item small {
+  color: #868e96;
+  font-size: 0.8rem;
+}
+
+.data-item .badge {
+  font-size: 0.7rem;
+  padding: 0.25em 0.6em;
+  font-weight: 500;
+}
+
+.data-item .btn-outline-danger {
+  border: none;
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  padding: 0.375rem 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.data-item .btn-outline-danger:hover {
+  background: #dc3545;
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Estados de loading e empty */
+.loading {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.empty-state {
+  color: #6c757d;
+}
+
+.empty-state h5 {
+  color: #495057;
+  font-weight: 500;
+}
+
+/* Alertas e notificações */
+.alert {
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.alert-success {
+  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+  color: #155724;
+}
+
+.alert-danger {
+  background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+  color: #721c24;
+}
+
+.alert-info {
+  background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+  color: #0c5460;
+}
+
+.alert-primary {
+  background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+  color: #004085;
+}
+
+.alert-secondary {
+  background: linear-gradient(135deg, #e2e3e5, #d6d8db);
+  color: #383d41;
+}
+
+.alert-warning {
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  color: #856404;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.25em 0.5em;
+}
+
+code {
+  background-color: rgba(0,0,0,0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 0.8em;
+}
+
+/* Scrollbar customization */
+.card-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.card-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.card-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Animation for new notifications */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert {
+  animation: fadeInDown 0.3s ease-out;
+}
+
+/* Loading spinner */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Form improvements */
+.form-control:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+  border-color: #80bdff;
+}
+
+/* Connection status */
+.connection-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.connection-status.connected {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.connection-status.disconnected {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* 🆕 Notification badges - Múltiplos badges */
+.notification-badge {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  background: #007bff;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 25px;
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+  transition: all 0.2s ease;
+}
+
+.notification-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,123,255,0.4);
+}
+
+/* 🆕 Badge específico para mensagens */
+.notification-badge.message-badge {
+  top: 120px; /* Posicionar abaixo do badge geral */
+  background: #17a2b8;
+  box-shadow: 0 4px 12px rgba(23,162,184,0.3);
+}
+
+.notification-badge.message-badge:hover {
+  box-shadow: 0 6px 16px rgba(23,162,184,0.4);
+}
+
+.badge-count {
+  background: rgba(255,255,255,0.2);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* 🆕 Estilos para abas de notificações */
+.card-header-tabs {
+  border-bottom: none;
+}
+
+.card-header-tabs .nav-link {
+  border: none;
+  color: #6c757d;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.card-header-tabs .nav-link.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.card-header-tabs .nav-link:hover:not(.active) {
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+.card-header-tabs .nav-link .badge {
+  font-size: 0.6rem;
+  padding: 0.2em 0.4em;
+}
+
+/* 🆕 Estilos específicos para notificações de mensagens */
+.message-notification {
+  border-left: 4px solid #17a2b8;
+  background: linear-gradient(135deg, #ffffff, #f0fdff);
+}
+
+.message-notification .alert {
+  margin-bottom: 0;
+  border-radius: 6px;
+}
+
+.message-notification .fw-bold {
+  color: #0c5460;
+}
+
+.message-notification .text-truncate {
+  line-height: 1.3;
+}
+
+/* 🆕 Animação para novas notificações de mensagens */
+@keyframes messageNotificationPulse {
+  0% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(23,162,184,0.7);
+  }
+  70% { 
+    transform: scale(1.02);
+    box-shadow: 0 0 0 10px rgba(23,162,184,0);
+  }
+  100% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(23,162,184,0);
+  }
+}
+
+.message-notification.new {
+  animation: messageNotificationPulse 2s ease-out;
+}
+
+/* 🆕 Indicador visual para mensagens não lidas */
+.unread-indicator {
+  width: 8px;
+  height: 8px;
+  background: #dc3545;
+  border-radius: 50%;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  animation: pulse 2s infinite;
+}
+
+/* 🆕 Estilos para diferentes tipos de mensagens */
+.message-type-success {
+  border-left-color: #28a745;
+  background: linear-gradient(135deg, #ffffff, #f8fff9);
+}
+
+.message-type-error {
+  border-left-color: #dc3545;
+  background: linear-gradient(135deg, #ffffff, #fff8f8);
+}
+
+.message-type-warning {
+  border-left-color: #ffc107;
+  background: linear-gradient(135deg, #ffffff, #fffef8);
+}
+
+.message-type-info {
+  border-left-color: #17a2b8;
+  background: linear-gradient(135deg, #ffffff, #f0fdff);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .display-4 {
+    font-size: 2rem;
+  }
+  
+  .stats-card .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .data-item {
+    margin-bottom: 8px;
+    padding: 12px;
+  }
+  
+  .alert {
+    font-size: 0.8rem;
+  }
+
+  .connection-status,
+  .notification-badge {
+    position: relative;
+    top: auto;
+    right: auto;
+    margin-bottom: 15px;
+    justify-content: center;
+  }
+
+  /* 🆕 Ajustes para badges de notificação em mobile */
+  .notification-badge.message-badge {
+    top: auto;
+    margin-top: 10px;
+  }
+
+  /* 🆕 Abas responsivas */
+  .card-header-tabs .nav-link {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .card-header-tabs .nav-link .badge {
+    font-size: 0.55rem;
+  }
+}
+
+@media (max-width: 576px) {
+  /* 🆕 Ajustes para telas muito pequenas */
+  .card-header-tabs {
+    flex-wrap: wrap;
+  }
+
+  .card-header-tabs .nav-link {
+    flex: 1;
+    text-align: center;
+    min-width: 120px;
+  }
+
+  .message-notification .text-truncate {
+    max-width: 200px;
+  }
+}
+
+/* 🆕 Melhorias na acessibilidade */
+.notification-badge:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.card-header-tabs .nav-link:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+/* 🆕 Estados de hover para melhor UX */
+.message-notification:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.alert:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* 🆕 Transições suaves */
+.tab-pane {
+  transition: opacity 0.3s ease-in-out;
+}
+
+.message-notification,
+.alert {
+  transition: all 0.2s ease;
+}
+
+/* 🆕 Estilos para botões de ação nas notificações */
+.notification-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.notification-actions .btn {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+/* 🆕 Indicador de tempo relativo */
+.time-indicator {
+  font-size: 0.7rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.time-indicator.recent {
+  color: #28a745;
+  font-weight: 500;
+}
+
+/* 🆕 Estilos para contadores de notificações */
+.notification-counter {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.message-counter {
+  background: linear-gradient(45deg, #17a2b8, #138496);
+}

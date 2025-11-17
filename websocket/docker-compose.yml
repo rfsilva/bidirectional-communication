@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # Banco de dados MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: websocket-demo-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: websocket_demo
+      MYSQL_USER: websocket_user
+      MYSQL_PASSWORD: websocket_password
+      TZ: UTC
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - websocket-demo-network
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-time-zone='+00:00'
+      --innodb-buffer-pool-size=256M
+      --max-connections=200
+      --bind-address=0.0.0.0
+      --skip-name-resolve
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "websocket_user", "-pwebsocket_password"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # # Backend Spring Boot
+  # backend:
+    # build:
+      # context: ./backend
+      # dockerfile: Dockerfile
+    # container_name: websocket-demo-backend
+    # restart: unless-stopped
+    # environment:
+      # SPRING_PROFILES_ACTIVE: docker
+      # SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/websocket_demo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      # SPRING_DATASOURCE_USERNAME: websocket_user
+      # SPRING_DATASOURCE_PASSWORD: websocket_password
+      # JAVA_OPTS: -Xmx512m -Xms256m
+    # ports:
+      # - "8080:8080"
+    # depends_on:
+      # mysql:
+        # condition: service_healthy
+    # networks:
+      # - websocket-demo-network
+    # volumes:
+      # - backend_logs:/app/logs
+    # healthcheck:
+      # test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      # interval: 30s
+      # timeout: 10s
+      # retries: 5
+      # start_period: 90s
+
+  # # Frontend Angular (opcional - para desenvolvimento completo)
+  # frontend:
+    # build:
+      # context: ./frontend
+      # dockerfile: Dockerfile
+    # container_name: websocket-demo-frontend
+    # restart: unless-stopped
+    # ports:
+      # - "4200:80"
+    # depends_on:
+      # - backend
+    # networks:
+      # - websocket-demo-network
+    # environment:
+      # API_URL: http://localhost:8080
+
+# Volumes para persistência de dados
+volumes:
+  mysql_data:
+    driver: local
+    name: websocket-demo-mysql-data
+  # backend_logs:
+    # driver: local
+    # name: websocket-demo-backend-logs
+
+# Rede para comunicação entre containers
+networks:
+  websocket-demo-network:
+    driver: bridge
+    name: websocket-demo-network

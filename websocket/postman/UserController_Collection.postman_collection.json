@@ -1,0 +1,764 @@
+{
+	"info": {
+		"_postman_id": "user-controller-collection-001",
+		"name": "UserController - User Management",
+		"description": "Collection para testar os endpoints do UserController - Gerenciamento de usuários (apenas ADMIN)\n\n**Pré-requisitos:**\n- Usar o environment 'SSE Demo - Local Development'\n- Fazer login como admin primeiro para obter o token\n- Todos os endpoints requerem role ADMIN\n\n**Endpoints incluídos:**\n- GET /api/users - Listar todos os usuários\n- GET /api/users/{id} - Buscar usuário por ID\n- POST /api/users - Criar novo usuário\n- PUT /api/users/{id} - Atualizar usuário\n- DELETE /api/users/{id} - Desativar usuário\n- PUT /api/users/{id}/activate - Ativar usuário\n- GET /api/users/stats - Estatísticas de usuários",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login as Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Salva o token de autenticação",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('authToken', response.token);",
+									"    pm.environment.set('currentUserId', response.user.id);",
+									"    ",
+									"    console.log('Login realizado com sucesso!');",
+									"    console.log('Token salvo:', response.token.substring(0, 20) + '...');",
+									"    console.log('User ID:', response.user.id);",
+									"    console.log('Role:', response.user.role);",
+									"} else {",
+									"    console.log('Erro no login:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"{{adminUsername}}\",\n    \"password\": \"{{adminPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Faz login como administrador para obter token de acesso necessário para os endpoints de usuário."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticação necessários para acessar os recursos de usuário."
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "Get All Users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Users have required fields', function () {",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        const user = response[0];",
+									"        pm.expect(user).to.have.property('id');",
+									"        pm.expect(user).to.have.property('username');",
+									"        pm.expect(user).to.have.property('email');",
+									"        pm.expect(user).to.have.property('firstName');",
+									"        pm.expect(user).to.have.property('lastName');",
+									"        pm.expect(user).to.have.property('role');",
+									"        pm.expect(user).to.have.property('isActive');",
+									"        pm.expect(user).to.not.have.property('password'); // Senha não deve ser exposta",
+									"    }",
+									"});",
+									"",
+									"console.log('Total de usuários:', pm.response.json().length);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/users",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Lista todos os usuários do sistema. Requer role ADMIN."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('User has correct structure', function () {",
+									"    const user = pm.response.json();",
+									"    pm.expect(user).to.have.property('id');",
+									"    pm.expect(user).to.have.property('username');",
+									"    pm.expect(user).to.have.property('email');",
+									"    pm.expect(user).to.have.property('firstName');",
+									"    pm.expect(user).to.have.property('lastName');",
+									"    pm.expect(user).to.have.property('role');",
+									"    pm.expect(user).to.have.property('isActive');",
+									"    pm.expect(user).to.not.have.property('password');",
+									"});",
+									"",
+									"console.log('Usuário encontrado:', pm.response.json().username);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/users/1",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users",
+								"1"
+							]
+						},
+						"description": "Busca um usuário específico pelo ID. Requer role ADMIN."
+					},
+					"response": []
+				},
+				{
+					"name": "Create New User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('User created successfully', function () {",
+									"    const user = pm.response.json();",
+									"    pm.expect(user).to.have.property('id');",
+									"    pm.expect(user.username).to.eql('testuser');",
+									"    pm.expect(user.email).to.eql('testuser@example.com');",
+									"    pm.expect(user.role).to.eql('VIEWER');",
+									"    pm.expect(user.isActive).to.be.true;",
+									"    ",
+									"    // Salva o ID do usuário criado para usar em outros testes",
+									"    pm.environment.set('testUserId', user.id);",
+									"});",
+									"",
+									"console.log('Usuário criado com ID:', pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"email\": \"testuser@example.com\",\n    \"password\": \"testpass123\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\",\n    \"role\": \"VIEWER\",\n    \"avatarUrl\": \"https://via.placeholder.com/150\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/users",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Cria um novo usuário no sistema. Requer role ADMIN.\n\n**Campos obrigatórios:**\n- username (3-50 caracteres, único)\n- email (formato válido, único)\n- password (mínimo 6 caracteres)\n- firstName (máximo 100 caracteres)\n- lastName (máximo 100 caracteres)\n- role (ADMIN, EDITOR, VIEWER)\n\n**Campos opcionais:**\n- avatarUrl"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('User updated successfully', function () {",
+									"    const user = pm.response.json();",
+									"    pm.expect(user.firstName).to.eql('Updated Test');",
+									"    pm.expect(user.role).to.eql('EDITOR');",
+									"});",
+									"",
+									"console.log('Usuário atualizado:', pm.response.json().username);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Verifica se temos um ID de usuário de teste",
+									"const testUserId = pm.environment.get('testUserId');",
+									"if (!testUserId) {",
+									"    console.log('AVISO: testUserId não encontrado. Execute \"Create New User\" primeiro.');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"email\": \"testuser@example.com\",\n    \"firstName\": \"Updated Test\",\n    \"lastName\": \"User\",\n    \"role\": \"EDITOR\",\n    \"avatarUrl\": \"https://via.placeholder.com/200\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/users/{{testUserId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users",
+								"{{testUserId}}"
+							]
+						},
+						"description": "Atualiza dados de um usuário existente. Requer role ADMIN.\n\n**Nota:** Execute \"Create New User\" primeiro para ter um usuário de teste."
+					},
+					"response": []
+				},
+				{
+					"name": "Deactivate User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Success message returned', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('message');",
+									"});",
+									"",
+									"console.log('Resposta:', pm.response.json().message);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Verifica se temos um ID de usuário de teste",
+									"const testUserId = pm.environment.get('testUserId');",
+									"if (!testUserId) {",
+									"    console.log('AVISO: testUserId não encontrado. Execute \"Create New User\" primeiro.');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/users/{{testUserId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users",
+								"{{testUserId}}"
+							]
+						},
+						"description": "Desativa um usuário (soft delete). Requer role ADMIN.\n\n**Nota:** Execute \"Create New User\" primeiro para ter um usuário de teste."
+					},
+					"response": []
+				},
+				{
+					"name": "Activate User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Success message returned', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('message');",
+									"});",
+									"",
+									"console.log('Resposta:', pm.response.json().message);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Verifica se temos um ID de usuário de teste",
+									"const testUserId = pm.environment.get('testUserId');",
+									"if (!testUserId) {",
+									"    console.log('AVISO: testUserId não encontrado. Execute \"Create New User\" primeiro.');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/users/{{testUserId}}/activate",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users",
+								"{{testUserId}}",
+								"activate"
+							]
+						},
+						"description": "Ativa um usuário desativado. Requer role ADMIN.\n\n**Nota:** Execute \"Deactivate User\" primeiro para ter um usuário desativado para testar."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Stats",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Stats have required fields', function () {",
+									"    const stats = pm.response.json();",
+									"    pm.expect(stats).to.have.property('totalUsers');",
+									"    pm.expect(stats).to.have.property('adminCount');",
+									"    pm.expect(stats).to.have.property('editorCount');",
+									"    pm.expect(stats).to.have.property('viewerCount');",
+									"    pm.expect(stats).to.have.property('activeUsers');",
+									"    pm.expect(stats).to.have.property('recentlyActive');",
+									"});",
+									"",
+									"pm.test('Stats are numbers', function () {",
+									"    const stats = pm.response.json();",
+									"    pm.expect(stats.totalUsers).to.be.a('number');",
+									"    pm.expect(stats.adminCount).to.be.a('number');",
+									"    pm.expect(stats.editorCount).to.be.a('number');",
+									"    pm.expect(stats.viewerCount).to.be.a('number');",
+									"    pm.expect(stats.activeUsers).to.be.a('number');",
+									"    pm.expect(stats.recentlyActive).to.be.a('number');",
+									"});",
+									"",
+									"const stats = pm.response.json();",
+									"console.log('=== ESTATÍSTICAS DE USUÁRIOS ===');",
+									"console.log('Total de usuários:', stats.totalUsers);",
+									"console.log('Administradores:', stats.adminCount);",
+									"console.log('Editores:', stats.editorCount);",
+									"console.log('Visualizadores:', stats.viewerCount);",
+									"console.log('Usuários ativos:', stats.activeUsers);",
+									"console.log('Ativos recentemente (24h):', stats.recentlyActive);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/users/stats",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users",
+								"stats"
+							]
+						},
+						"description": "Retorna estatísticas dos usuários por role. Requer role ADMIN.\n\n**Retorna:**\n- totalUsers: Total de usuários\n- adminCount: Número de administradores\n- editorCount: Número de editores\n- viewerCount: Número de visualizadores\n- activeUsers: Usuários ativos\n- recentlyActive: Usuários ativos nas últimas 24 horas"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gerenciamento de usuários. Todos requerem autenticação e role ADMIN."
+		},
+		{
+			"name": "Error Cases",
+			"item": [
+				{
+					"name": "Get User Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"console.log('Teste de usuário não encontrado - Status:', pm.response.code);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/users/99999",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users",
+								"99999"
+							]
+						},
+						"description": "Testa o comportamento quando um usuário não é encontrado."
+					},
+					"response": []
+				},
+				{
+					"name": "Create User - Duplicate Username",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Error message returned', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('error');",
+									"    pm.expect(response).to.have.property('message');",
+									"});",
+									"",
+									"console.log('Erro esperado:', pm.response.json().message);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"email\": \"duplicate@example.com\",\n    \"password\": \"testpass123\",\n    \"firstName\": \"Duplicate\",\n    \"lastName\": \"User\",\n    \"role\": \"VIEWER\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/users",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Testa o comportamento ao tentar criar um usuário com username já existente."
+					},
+					"response": []
+				},
+				{
+					"name": "Create User - Invalid Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"console.log('Erro de validação:', pm.response.text());"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"ab\",\n    \"email\": \"invalid-email\",\n    \"password\": \"123\",\n    \"firstName\": \"\",\n    \"lastName\": \"\",\n    \"role\": \"INVALID_ROLE\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/users",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Testa o comportamento com dados inválidos (username muito curto, email inválido, senha muito curta, campos obrigatórios vazios, role inválida)."
+					},
+					"response": []
+				},
+				{
+					"name": "Unauthorized Access",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"console.log('Acesso não autorizado - Status:', pm.response.code);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/users",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"users"
+							]
+						},
+						"description": "Testa o comportamento sem token de autenticação."
+					},
+					"response": []
+				}
+			],
+			"description": "Testes de casos de erro e validação."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "global-prerequest",
+				"exec": [
+					"// Verifica se o token está presente para requests que precisam de autenticação",
+					"const authHeader = pm.request.headers.get('Authorization');",
+					"if (authHeader && authHeader.includes('{{authToken}}')) {",
+					"    const token = pm.environment.get('authToken');",
+					"    if (!token || token === '') {",
+					"        console.log('⚠️  AVISO: Token de autenticação não encontrado!');",
+					"        console.log('Execute \"Login as Admin\" primeiro para obter o token.');",
+					"    }",
+					"}"
+				],
+				"type": "text/javascript"
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "global-test",
+				"exec": [
+					"// Log global para todas as requests",
+					"console.log('=== REQUEST INFO ===');",
+					"console.log('Method:', pm.request.method);",
+					"console.log('URL:', pm.request.url.toString());",
+					"console.log('Status:', pm.response.code, pm.response.status);",
+					"console.log('Response Time:', pm.response.responseTime + 'ms');",
+					"",
+					"// Verifica se a resposta é JSON válido",
+					"try {",
+					"    const response = pm.response.json();",
+					"    console.log('Response Type: JSON');",
+					"} catch (e) {",
+					"    console.log('Response Type: Non-JSON');",
+					"    console.log('Response Text:', pm.response.text());",
+					"}"
+				],
+				"type": "text/javascript"
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "testUserId",
+			"value": "",
+			"type": "string",
+			"description": "ID do usuário criado para testes"
+		}
+	]
+}

@@ -1,0 +1,932 @@
+{
+	"info": {
+		"_postman_id": "sse-demo-collection-001",
+		"name": "SSE Demo - API Collection",
+		"description": "Collection para testar os endpoints dos controllers AuthController e SSEController do projeto SSE Demo.\n\nEsta collection inclui:\n- Autenticação para os 3 tipos de usuários (ADMIN, EDITOR, VIEWER)\n- Validação de token JWT\n- Endpoints de SSE (Server-Sent Events)\n- Testes de notificações em tempo real\n\nPré-requisitos:\n- Environment 'SSE Demo - Local Development' configurado\n- Servidor rodando em http://localhost:8080",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"description": "Endpoints para autenticação e autorização de usuários",
+			"item": [
+				{
+					"name": "Login - Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se o token foi retornado",
+									"pm.test(\"Response has token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    pm.expect(jsonData.user).to.have.property('role', 'ADMIN');",
+									"});",
+									"",
+									"// Salvar token no environment",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"authToken\", jsonData.token);",
+									"    pm.environment.set(\"currentUserId\", jsonData.user.id);",
+									"    console.log(\"Token salvo para usuário ADMIN:\", jsonData.user.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"{{adminUsername}}\",\n    \"password\": \"{{adminPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica usuário com role ADMIN. Salva o token JWT no environment para uso em outras requisições."
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Editor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se o token foi retornado",
+									"pm.test(\"Response has token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    pm.expect(jsonData.user).to.have.property('role', 'EDITOR');",
+									"});",
+									"",
+									"// Salvar token no environment",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"authToken\", jsonData.token);",
+									"    pm.environment.set(\"currentUserId\", jsonData.user.id);",
+									"    console.log(\"Token salvo para usuário EDITOR:\", jsonData.user.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"{{editorUsername}}\",\n    \"password\": \"{{editorPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica usuário com role EDITOR. Salva o token JWT no environment para uso em outras requisições."
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Viewer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se o token foi retornado",
+									"pm.test(\"Response has token\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    pm.expect(jsonData.user).to.have.property('role', 'VIEWER');",
+									"});",
+									"",
+									"// Salvar token no environment",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"authToken\", jsonData.token);",
+									"    pm.environment.set(\"currentUserId\", jsonData.user.id);",
+									"    console.log(\"Token salvo para usuário VIEWER:\", jsonData.user.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"{{viewerUsername}}\",\n    \"password\": \"{{viewerPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Autentica usuário com role VIEWER. Salva o token JWT no environment para uso em outras requisições."
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Credenciais Inválidas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se retorna erro 401",
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"// Verificar se a mensagem de erro está presente",
+									"pm.test(\"Response has error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"usuario_inexistente\",\n    \"password\": \"senha_errada\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Testa login com credenciais inválidas. Deve retornar erro 401."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se o token é válido",
+									"pm.test(\"Token is valid\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('valid', true);",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    pm.expect(jsonData.user).to.have.property('username');",
+									"    pm.expect(jsonData.user).to.have.property('role');",
+									"    pm.expect(jsonData.user).to.have.property('expiresIn');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/auth/validate",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"validate"
+							]
+						},
+						"description": "Valida o token JWT atual. Requer que um login tenha sido feito anteriormente para ter um token válido."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Token - Invalid",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se retorna erro 401",
+									"pm.test(\"Status code is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"// Verificar se o token é inválido",
+									"pm.test(\"Token is invalid\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('valid', false);",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer token_invalido_para_teste"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/auth/validate",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"validate"
+							]
+						},
+						"description": "Testa validação com token inválido. Deve retornar erro 401."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se as informações do usuário estão presentes",
+									"pm.test(\"Response has user info\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('username');",
+									"    pm.expect(jsonData).to.have.property('email');",
+									"    pm.expect(jsonData).to.have.property('fullName');",
+									"    pm.expect(jsonData).to.have.property('role');",
+									"    pm.expect(jsonData).to.have.property('roleName');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/auth/me",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Obtém informações do usuário atualmente autenticado. Requer token válido."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se a mensagem de logout está presente",
+									"pm.test(\"Response has logout message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});",
+									"",
+									"// Limpar token do environment",
+									"pm.environment.set(\"authToken\", \"\");",
+									"pm.environment.set(\"currentUserId\", \"\");",
+									"console.log(\"Token removido do environment\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/auth/logout",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Realiza logout do usuário. Limpa o token do environment."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Server-Sent Events (SSE)",
+			"description": "Endpoints para gerenciamento de notificações em tempo real via SSE",
+			"item": [
+				{
+					"name": "SSE Stream Connection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a conexão SSE foi estabelecida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se o content-type é text/event-stream",
+									"pm.test(\"Content-Type is text/event-stream\", function () {",
+									"    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/event-stream');",
+									"});",
+									"",
+									"console.log(\"Conexão SSE estabelecida. Verifique o console do navegador para ver os eventos em tempo real.\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept",
+								"value": "text/event-stream"
+							},
+							{
+								"key": "Cache-Control",
+								"value": "no-cache"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/notifications/stream",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"notifications",
+								"stream"
+							]
+						},
+						"description": "Estabelece uma conexão Server-Sent Events para receber notificações em tempo real. Esta conexão permanece aberta e envia eventos quando há atualizações.\n\nNota: No Postman, você verá apenas o estabelecimento da conexão. Para testar completamente o SSE, use um navegador ou ferramenta específica para SSE."
+					},
+					"response": []
+				},
+				{
+					"name": "Send Test Notification",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se a notificação foi enviada",
+									"pm.test(\"Notification sent successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('status', 'success');",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('activeConnections');",
+									"});",
+									"",
+									"// Log do número de conexões ativas",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(\"Notificação enviada para\", jsonData.activeConnections, \"conexões ativas\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Esta é uma notificação de teste enviada via Postman!\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/notifications/test",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"notifications",
+								"test"
+							]
+						},
+						"description": "Envia uma notificação de teste para todas as conexões SSE ativas. Útil para testar se o sistema de notificações está funcionando."
+					},
+					"response": []
+				},
+				{
+					"name": "Send Test Notification - Default Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se a notificação foi enviada",
+									"pm.test(\"Notification sent successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('status', 'success');",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('activeConnections');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/notifications/test",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"notifications",
+								"test"
+							]
+						},
+						"description": "Envia uma notificação de teste com mensagem padrão (sem especificar mensagem customizada)."
+					},
+					"response": []
+				},
+				{
+					"name": "Force External Data Fetch",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se a busca foi executada",
+									"pm.test(\"External data fetch executed\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('status', 'success');",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('recordsImported');",
+									"});",
+									"",
+									"// Log do número de registros importados",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(\"Busca externa executada:\", jsonData.recordsImported, \"registros importados\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/notifications/force-fetch",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"notifications",
+								"force-fetch"
+							]
+						},
+						"description": "Força uma busca manual de dados externos e envia notificação SSE com os resultados. Simula a importação de dados de uma API externa."
+					},
+					"response": []
+				},
+				{
+					"name": "Get SSE Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Verificar se a resposta foi bem-sucedida",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Verificar se o status foi retornado",
+									"pm.test(\"SSE status returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('activeConnections');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"    pm.expect(jsonData).to.have.property('statusMessage');",
+									"    pm.expect(jsonData).to.have.property('timestamp');",
+									"});",
+									"",
+									"// Log do status das conexões",
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(\"Status SSE:\", jsonData.activeConnections, \"conexões ativas -\", jsonData.status);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{tokenType}} {{authToken}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/notifications/status",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"notifications",
+								"status"
+							]
+						},
+						"description": "Retorna informações sobre o status atual das conexões Server-Sent Events, incluindo número de conexões ativas."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Scenarios",
+			"description": "Cenários de teste combinados para validar fluxos completos",
+			"item": [
+				{
+					"name": "Complete Auth Flow - Admin",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Limpar token antes do teste",
+									"pm.environment.set(\"authToken\", \"\");"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Este é um teste de fluxo completo",
+									"// 1. Login",
+									"// 2. Validar token",
+									"// 3. Obter informações do usuário",
+									"// 4. Logout",
+									"",
+									"pm.test(\"Complete auth flow test setup\", function () {",
+									"    console.log(\"Execute as seguintes requisições em sequência:\");",
+									"    console.log(\"1. Login - Admin\");",
+									"    console.log(\"2. Validate Token\");",
+									"    console.log(\"3. Get Current User\");",
+									"    console.log(\"4. Logout\");",
+									"    pm.expect(true).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/auth/me",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Cenário de teste para fluxo completo de autenticação. Execute as requisições de autenticação em sequência para testar o fluxo completo."
+					},
+					"response": []
+				},
+				{
+					"name": "SSE Integration Test",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"SSE integration test setup\", function () {",
+									"    console.log(\"Para testar SSE completamente:\");",
+									"    console.log(\"1. Faça login com qualquer usuário\");",
+									"    console.log(\"2. Abra a conexão SSE em uma aba do navegador\");",
+									"    console.log(\"3. Execute 'Send Test Notification'\");",
+									"    console.log(\"4. Execute 'Force External Data Fetch'\");",
+									"    console.log(\"5. Verifique 'Get SSE Status'\");",
+									"    pm.expect(true).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/notifications/status",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"notifications",
+								"status"
+							]
+						},
+						"description": "Cenário de teste para integração completa do SSE. Siga as instruções no console para testar o fluxo completo de notificações em tempo real."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Script global executado antes de cada requisição",
+					"",
+					"// Log da requisição que será executada",
+					"console.log('Executando:', pm.info.requestName);",
+					"",
+					"// Verificar se temos token para requisições que precisam de autenticação",
+					"const authToken = pm.environment.get('authToken');",
+					"const requestUrl = pm.request.url.toString();",
+					"",
+					"// Endpoints que não precisam de autenticação",
+					"const publicEndpoints = ['/auth/login'];",
+					"const isPublicEndpoint = publicEndpoints.some(endpoint => requestUrl.includes(endpoint));",
+					"",
+					"if (!isPublicEndpoint && (!authToken || authToken === '')) {",
+					"    console.warn('⚠️  Esta requisição pode precisar de autenticação. Execute um login primeiro.');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Script global executado após cada requisição",
+					"",
+					"// Log do resultado da requisição",
+					"console.log('Resposta:', pm.response.status, pm.response.code);",
+					"",
+					"// Verificar se houve erro de autenticação",
+					"if (pm.response.code === 401) {",
+					"    console.warn('🔒 Erro de autenticação. Verifique se o token é válido ou faça login novamente.');",
+					"}",
+					"",
+					"// Verificar se houve erro de autorização",
+					"if (pm.response.code === 403) {",
+					"    console.warn('🚫 Erro de autorização. O usuário não tem permissão para este endpoint.');",
+					"}",
+					"",
+					"// Log de sucesso",
+					"if (pm.response.code >= 200 && pm.response.code < 300) {",
+					"    console.log('✅ Requisição executada com sucesso');",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "collection_version",
+			"value": "1.0.0",
+			"type": "string"
+		},
+		{
+			"key": "collection_description",
+			"value": "Collection para testar endpoints de autenticação e SSE do projeto SSE Demo",
+			"type": "string"
+		}
+	]
+}

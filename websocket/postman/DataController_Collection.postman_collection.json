@@ -1,0 +1,1083 @@
+{
+	"info": {
+		"_postman_id": "data-controller-collection-001",
+		"name": "DataController - SSE Demo API",
+		"description": "Collection para testar os principais endpoints do DataController da aplicação SSE Demo.\n\n## Funcionalidades Testadas:\n- CRUD completo de dados (Create, Read, Update, Delete)\n- Listagem de dados externos e internos\n- Estatísticas dos dados\n- Controle de acesso baseado em roles (ADMIN, EDITOR, VIEWER)\n\n## Pré-requisitos:\n1. Aplicação rodando em http://localhost:8080\n2. Environment 'SSE Demo - Local Development' configurado\n3. Autenticação via JWT token\n\n## Como usar:\n1. Execute primeiro o login (pasta Auth) para obter o token\n2. Execute os testes na ordem sugerida\n3. Verifique as notificações SSE no frontend durante as operações",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Salva o token de autenticação",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('authToken', response.token);",
+									"    pm.environment.set('currentUserId', response.user.id);",
+									"    ",
+									"    pm.test('Login realizado com sucesso', function () {",
+									"        pm.expect(response.token).to.not.be.empty;",
+									"        pm.expect(response.user.role).to.eql('ADMIN');",
+									"    });",
+									"} else {",
+									"    pm.test('Falha no login', function () {",
+									"        pm.expect.fail('Login falhou com status: ' + pm.response.code);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"{{adminUsername}}\",\n    \"password\": \"{{adminPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Realiza login como ADMIN para obter token JWT com permissões completas"
+					}
+				},
+				{
+					"name": "Login Editor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Salva o token de autenticação",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('authToken', response.token);",
+									"    pm.environment.set('currentUserId', response.user.id);",
+									"    ",
+									"    pm.test('Login realizado com sucesso', function () {",
+									"        pm.expect(response.token).to.not.be.empty;",
+									"        pm.expect(response.user.role).to.eql('EDITOR');",
+									"    });",
+									"} else {",
+									"    pm.test('Falha no login', function () {",
+									"        pm.expect.fail('Login falhou com status: ' + pm.response.code);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"{{editorUsername}}\",\n    \"password\": \"{{editorPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Realiza login como EDITOR para obter token JWT com permissões de CRUD"
+					}
+				},
+				{
+					"name": "Login Viewer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Salva o token de autenticação",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('authToken', response.token);",
+									"    pm.environment.set('currentUserId', response.user.id);",
+									"    ",
+									"    pm.test('Login realizado com sucesso', function () {",
+									"        pm.expect(response.token).to.not.be.empty;",
+									"        pm.expect(response.user.role).to.eql('VIEWER');",
+									"    });",
+									"} else {",
+									"    pm.test('Falha no login', function () {",
+									"        pm.expect.fail('Login falhou com status: ' + pm.response.code);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login\": \"{{viewerUsername}}\",\n    \"password\": \"{{viewerPassword}}\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/auth/login",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Realiza login como VIEWER para obter token JWT com permissões apenas de leitura"
+					}
+				}
+			],
+			"description": "Endpoints de autenticação para obter tokens JWT com diferentes níveis de permissão"
+		},
+		{
+			"name": "Data - Read Operations",
+			"item": [
+				{
+					"name": "Get All Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('Response time is less than 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"",
+									"// Salva ID do primeiro item para testes posteriores",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        pm.environment.set('testDataId', response[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/data",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data"
+							]
+						},
+						"description": "Lista todos os registros de dados. Acessível por ADMIN, EDITOR e VIEWER."
+					}
+				},
+				{
+					"name": "Get Data by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Response has required fields', function () {",
+									"        const response = pm.response.json();",
+									"        pm.expect(response).to.have.property('id');",
+									"        pm.expect(response).to.have.property('name');",
+									"        pm.expect(response).to.have.property('value');",
+									"        pm.expect(response).to.have.property('createdAt');",
+									"        pm.expect(response).to.have.property('isExternal');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/data/{{testDataId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data",
+								"{{testDataId}}"
+							]
+						},
+						"description": "Busca um registro específico por ID. Acessível por ADMIN, EDITOR e VIEWER."
+					}
+				},
+				{
+					"name": "Get External Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('All items are external', function () {",
+									"    const response = pm.response.json();",
+									"    response.forEach(item => {",
+									"        pm.expect(item.isExternal).to.be.true;",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/data/external",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data",
+								"external"
+							]
+						},
+						"description": "Lista apenas os registros marcados como externos (isExternal = true)."
+					}
+				},
+				{
+					"name": "Get Internal Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('All items are internal', function () {",
+									"    const response = pm.response.json();",
+									"    response.forEach(item => {",
+									"        pm.expect(item.isExternal).to.be.false;",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/data/internal",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data",
+								"internal"
+							]
+						},
+						"description": "Lista apenas os registros marcados como internos (isExternal = false)."
+					}
+				},
+				{
+					"name": "Get Stats",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has required stats fields', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('totalRecords');",
+									"    pm.expect(response).to.have.property('externalRecords');",
+									"    pm.expect(response).to.have.property('internalRecords');",
+									"    pm.expect(response).to.have.property('lastCreatedAt');",
+									"    pm.expect(response).to.have.property('activeSSEConnections');",
+									"});",
+									"",
+									"pm.test('Stats values are valid', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.totalRecords).to.be.a('number');",
+									"    pm.expect(response.externalRecords).to.be.a('number');",
+									"    pm.expect(response.internalRecords).to.be.a('number');",
+									"    pm.expect(response.activeSSEConnections).to.be.a('number');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/data/stats",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data",
+								"stats"
+							]
+						},
+						"description": "Obtém estatísticas gerais dos dados e conexões SSE ativas."
+					}
+				}
+			],
+			"description": "Operações de leitura de dados - acessíveis por todos os roles (ADMIN, EDITOR, VIEWER)"
+		},
+		{
+			"name": "Data - Write Operations (ADMIN/EDITOR)",
+			"item": [
+				{
+					"name": "Create New Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    pm.test('Response has required fields', function () {",
+									"        const response = pm.response.json();",
+									"        pm.expect(response).to.have.property('id');",
+									"        pm.expect(response).to.have.property('name');",
+									"        pm.expect(response).to.have.property('value');",
+									"        pm.expect(response).to.have.property('createdAt');",
+									"        pm.expect(response).to.have.property('isExternal');",
+									"    });",
+									"    ",
+									"    pm.test('Created data matches input', function () {",
+									"        const response = pm.response.json();",
+									"        pm.expect(response.name).to.include('Teste Postman');",
+									"        pm.expect(response.value).to.include('Criado via API');",
+									"        pm.expect(response.isExternal).to.be.false;",
+									"    });",
+									"    ",
+									"    // Salva o ID do item criado para testes posteriores",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('createdDataId', response.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Teste Postman - {{$timestamp}}\",\n    \"value\": \"Criado via API em {{$isoTimestamp}}\",\n    \"isExternal\": false\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/data",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data"
+							]
+						},
+						"description": "Cria um novo registro de dados. Requer permissões de ADMIN ou EDITOR. Envia notificação SSE."
+					}
+				},
+				{
+					"name": "Update Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test('Response has required fields', function () {",
+									"        const response = pm.response.json();",
+									"        pm.expect(response).to.have.property('id');",
+									"        pm.expect(response).to.have.property('name');",
+									"        pm.expect(response).to.have.property('value');",
+									"        pm.expect(response).to.have.property('updatedAt');",
+									"    });",
+									"    ",
+									"    pm.test('Updated data matches input', function () {",
+									"        const response = pm.response.json();",
+									"        pm.expect(response.name).to.include('ATUALIZADO');",
+									"        pm.expect(response.value).to.include('Modificado via API');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Teste Postman ATUALIZADO - {{$timestamp}}\",\n    \"value\": \"Modificado via API em {{$isoTimestamp}}\",\n    \"isExternal\": false\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/data/{{createdDataId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data",
+								"{{createdDataId}}"
+							]
+						},
+						"description": "Atualiza um registro existente. Requer permissões de ADMIN ou EDITOR. Envia notificação SSE."
+					}
+				},
+				{
+					"name": "Delete Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 204 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 204) {",
+									"    pm.test('Response body is empty', function () {",
+									"        pm.expect(pm.response.text()).to.be.empty;",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept-Language",
+								"value": "{{language}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{apiUrl}}/data/{{createdDataId}}",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data",
+								"{{createdDataId}}"
+							]
+						},
+						"description": "Exclui um registro pelo ID. Requer permissões de ADMIN ou EDITOR. Envia notificação SSE."
+					}
+				}
+			],
+			"description": "Operações de escrita (Create, Update, Delete) - requerem permissões de ADMIN ou EDITOR"
+		},
+		{
+			"name": "Permission Tests",
+			"item": [
+				{
+					"name": "VIEWER - Try Create (Should Fail)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Este teste deve ser executado com token de VIEWER",
+									"// Para isso, execute primeiro o 'Login Viewer' na pasta Auth"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403 (Forbidden)', function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"pm.test('VIEWER cannot create data', function () {",
+									"    pm.expect(pm.response.code).to.equal(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Tentativa VIEWER\",\n    \"value\": \"Este teste deve falhar\",\n    \"isExternal\": false\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/data",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data"
+							]
+						},
+						"description": "Testa se VIEWER é impedido de criar dados (deve retornar 403)"
+					}
+				},
+				{
+					"name": "VIEWER - Can Read Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('VIEWER can read data', function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/data",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data"
+							]
+						},
+						"description": "Testa se VIEWER pode ler dados (deve retornar 200)"
+					}
+				},
+				{
+					"name": "No Auth - Should Fail",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401 (Unauthorized)', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Unauthenticated request is rejected', function () {",
+									"    pm.expect(pm.response.code).to.equal(401);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/data",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data"
+							]
+						},
+						"description": "Testa acesso sem autenticação (deve retornar 401)"
+					}
+				}
+			],
+			"description": "Testes de controle de acesso e permissões baseadas em roles"
+		},
+		{
+			"name": "Edge Cases",
+			"item": [
+				{
+					"name": "Get Non-Existent Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Non-existent ID returns 404', function () {",
+									"    pm.expect(pm.response.code).to.equal(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/data/99999",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data",
+								"99999"
+							]
+						},
+						"description": "Testa busca por ID inexistente (deve retornar 404)"
+					}
+				},
+				{
+					"name": "Create Invalid Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Invalid data is rejected', function () {",
+									"    pm.expect(pm.response.code).to.equal(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"\",\n    \"value\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/data",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data"
+							]
+						},
+						"description": "Testa criação com dados inválidos (campos obrigatórios vazios)"
+					}
+				},
+				{
+					"name": "Update Non-Existent Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Update non-existent ID returns 404', function () {",
+									"    pm.expect(pm.response.code).to.equal(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Teste Update\",\n    \"value\": \"Valor de teste\",\n    \"isExternal\": false\n}"
+						},
+						"url": {
+							"raw": "{{apiUrl}}/data/99999",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data",
+								"99999"
+							]
+						},
+						"description": "Testa atualização de ID inexistente (deve retornar 404)"
+					}
+				},
+				{
+					"name": "Delete Non-Existent Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Delete non-existent ID returns 404', function () {",
+									"    pm.expect(pm.response.code).to.equal(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{authToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{apiUrl}}/data/99999",
+							"host": [
+								"{{apiUrl}}"
+							],
+							"path": [
+								"data",
+								"99999"
+							]
+						},
+						"description": "Testa exclusão de ID inexistente (deve retornar 404)"
+					}
+				}
+			],
+			"description": "Testes de casos extremos e validações de erro"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Script global executado antes de cada request",
+					"// Verifica se o token está presente para requests autenticados",
+					"const authToken = pm.environment.get('authToken');",
+					"if (!authToken && pm.request.auth && pm.request.auth.type === 'bearer') {",
+					"    console.warn('⚠️ Token de autenticação não encontrado. Execute o login primeiro.');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Script global executado após cada response",
+					"// Log básico de informações da resposta",
+					"console.log(`📡 ${pm.request.method} ${pm.request.url} - Status: ${pm.response.code} - Time: ${pm.response.responseTime}ms`);",
+					"",
+					"// Verifica se o token expirou",
+					"if (pm.response.code === 401) {",
+					"    console.warn('🔒 Token expirado ou inválido. Execute o login novamente.');",
+					"    pm.environment.set('authToken', '');",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "timestamp",
+			"value": "{{$timestamp}}",
+			"type": "string"
+		},
+		{
+			"key": "randomInt",
+			"value": "{{$randomInt}}",
+			"type": "string"
+		}
+	]
+}

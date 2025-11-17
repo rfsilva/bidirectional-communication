@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>WebSocket Demo - Comunicação em Tempo Real</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Demonstração de WebSocket com Angular e Spring Boot">
+  <meta name="author" content="WebSocket Demo Team">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  
+  <!-- Font Awesome para ícones -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" 
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" 
+        crossorigin="anonymous" 
+        referrerpolicy="no-referrer">
+  
+  <!-- Polyfills para bibliotecas Node.js no browser -->
+  <script>
+    // Polyfill para 'global' - necessário para SockJS e STOMP
+    (function() {
+      if (typeof global === 'undefined') {
+        var global = globalThis || window || self;
+        window.global = global;
+      }
+      
+      // Polyfill para 'process' - necessário para algumas bibliotecas
+      if (typeof process === 'undefined') {
+        window.process = {
+          env: { NODE_ENV: 'development' },
+          nextTick: function(callback) {
+            setTimeout(callback, 0);
+          },
+          version: '',
+          platform: 'browser',
+          browser: true
+        };
+      }
+      
+      // Polyfill para 'Buffer' - necessário para algumas bibliotecas de crypto
+      if (typeof Buffer === 'undefined') {
+        window.Buffer = {
+          isBuffer: function() { return false; },
+          from: function(data) { return data; },
+          alloc: function(size) { return new Array(size).fill(0); }
+        };
+      }
+      
+      // Polyfill para 'require' - fallback básico
+      if (typeof require === 'undefined') {
+        window.require = function(module) {
+          console.warn('require() called for:', module, '- This is a browser polyfill');
+          return {};
+        };
+      }
+    })();
+  </script>
+</head>
+<body>
+  <app-root>
+    <!-- Loading inicial -->
+    <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+      <div style="text-align: center; color: white;">
+        <div style="font-size: 48px; margin-bottom: 20px;">🔗</div>
+        <h2 style="margin-bottom: 10px;">WebSocket Demo</h2>
+        <p style="margin-bottom: 20px;">Carregando aplicação...</p>
+        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite;"></div>
+      </div>
+    </div>
+    
+    <style>
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </app-root>
+</body>
+</html>

@@ -1,0 +1,124 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: websocket-demo-backend
+  
+  # Configuração do MySQL
+  datasource:
+    url: jdbc:mysql://localhost:3306/websocket_demo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: websocket_user
+    password: websocket_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    
+  # Configuração do JPA/Hibernate
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    hibernate:
+      ddl-auto: validate # Flyway gerencia o schema
+    show-sql: false # Desabilitado em produção
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+  
+  # Configuração do Flyway
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    sql-migration-suffixes: .sql
+    encoding: UTF-8
+    validate-on-migrate: true
+    clean-disabled: true # Segurança em produção
+  
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+  # Configurações de internacionalização
+  messages:
+    basename: messages
+    encoding: UTF-8
+    cache-duration: 3600
+    fallback-to-system-locale: false
+    always-use-message-format: false
+
+  # Configuração de locale - Removido locale-resolver (será configurado via @Bean)
+  web:
+    locale: en
+
+# Configurações JWT
+app:
+  jwt:
+    secret: WebSocketDemoSecretKeyForJWTTokenGenerationThatMustBeAtLeast256BitsLongForHS256Algorithm
+    expiration: 86400000 # 24 horas em millisegundos
+  i18n:
+    default-locale: en
+    supported-locales: en,pt,es,it
+    require-explicit-lang-param: true
+
+# SpringDoc OpenAPI 3 Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    try-it-out-enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    doc-expansion: none
+    disable-swagger-default-url: true
+    display-request-duration: true
+    default-models-expand-depth: 2
+    default-model-expand-depth: 2
+  show-actuator: false
+  group-configs:
+    - group: 'websocket-demo-api'
+      display-name: 'WebSocket Demo API'
+      paths-to-match: '/api/**'
+
+# Configurações de agendamento
+scheduling:
+  enabled: true
+
+logging:
+  level:
+    com.example.websocketdemo: INFO
+    org.springframework.web: INFO
+    org.hibernate.SQL: INFO
+    org.flywaydb: INFO
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+---
+# Profile para desenvolvimento local
+spring:
+  config:
+    activate:
+      on-profile: dev
+  jpa:
+    show-sql: true
+  logging:
+    level:
+      com.example.websocketdemo: DEBUG
+      org.hibernate.SQL: DEBUG
+      org.springframework.security: DEBUG
+
+---
+# Profile para Docker
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:mysql://mysql:3306/websocket_demo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: websocket_user
+    password: websocket_password

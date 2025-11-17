@@ -1,0 +1,623 @@
+<div class="container-fluid">
+  <!-- Header com Avatar -->
+  <div class="dashboard-header">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="display-4 mb-0">WebSocket Demo</h1>
+        <p class="text-muted">Comunicação em tempo real entre Angular 18 e Spring Boot 3</p>
+      </div>
+      <app-user-avatar></app-user-avatar>
+    </div>
+  </div>
+
+  <!-- User Info & Permissions -->
+  <div class="row mb-4" *ngIf="currentUser">
+    <div class="col-12">
+      <div class="card border-success">
+        <div class="card-header bg-success text-white">
+          <h6 class="mb-0">👤 Informações do Usuário Logado</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="d-flex align-items-center mb-2">
+                <span class="me-2" style="font-size: 1.5em;">👤</span>
+                <div>
+                  <strong>Usuário:</strong> {{ currentUser.fullName }} ({{ currentUser.username }})
+                </div>
+              </div>
+              <div class="d-flex align-items-center mb-2">
+                <span class="me-2" style="font-size: 1.5em;">📧</span>
+                <div>
+                  <strong>Email:</strong> {{ currentUser.email }}
+                </div>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="me-2" style="font-size: 1.5em;">🎭</span>
+                <div>
+                  <strong>Perfil:</strong> 
+                  <span class="badge ms-1" [class]="'bg-' + userRoleColor">
+                    {{ currentUser.roleName }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-2">
+                <strong>Permissões:</strong>
+                <div class="mt-1">
+                  <span class="badge bg-success me-1" *ngIf="canEditData()">✏️ Editar Dados</span>
+                  <span class="badge bg-info me-1">👁️ Visualizar Dados</span>
+                  <span class="badge bg-warning me-1" *ngIf="canManageSSE()">📡 Gerenciar WebSocket</span>
+                  <span class="badge bg-danger me-1" *ngIf="canManageUsers()">👥 Gerenciar Usuários</span>
+                </div>
+              </div>
+              <div *ngIf="currentUser.lastLogin">
+                <small class="text-muted">
+                  <strong>Último login:</strong> {{ formatDate(currentUser.lastLogin) }}
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connection Status -->
+  <div class="connection-status" [class.connected]="isConnected" [class.disconnected]="!isConnected">
+    <span class="status-dot"></span>
+    {{ isConnected ? 'WebSocket Conectado' : 'WebSocket Desconectado' }}
+  </div>
+
+  <!-- Notification Badges -->
+  <div class="d-flex gap-2 mb-3">
+    <!-- Badge para notificações gerais -->
+    <div class="notification-badge" *ngIf="unreadCount > 0" (click)="refreshData()">
+      <span class="badge-count">{{ unreadCount }}</span>
+      <span>{{ unreadCount === 1 ? 'Nova atualização' : 'Novas atualizações' }}</span>
+    </div>
+
+    <!-- 🆕 Badge para notificações de mensagens -->
+    <div class="notification-badge message-badge" *ngIf="unreadMessageCount > 0" (click)="markMessageNotificationsAsRead()">
+      <span class="badge-count">{{ unreadMessageCount }}</span>
+      <span>{{ unreadMessageCount === 1 ? 'Nova mensagem' : 'Novas mensagens' }}</span>
+    </div>
+  </div>
+
+  <!-- I18N Info -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-info">
+        <div class="card-header bg-info text-white">
+          <h6 class="mb-0">🌍 Informações de Internacionalização (I18N)</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="d-flex align-items-center mb-2">
+                <span class="me-2" style="font-size: 1.5em;">{{ languageFlag }}</span>
+                <div>
+                  <strong>Idioma Atual:</strong> {{ languageName }} ({{ currentLanguage }})
+                </div>
+              </div>
+              <small><strong>Comportamento:</strong> Backend padrão em inglês</small><br>
+              <small><strong>Frontend solicita:</strong> Português via ?lang=pt</small><br>
+              <small><strong>Interceptor:</strong> ✅ Ativo (adiciona ?lang=pt automaticamente)</small>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-2">
+                <strong>Idiomas Disponíveis:</strong>
+                <div class="mt-1">
+                  <button 
+                    *ngFor="let lang of availableLanguages" 
+                    class="btn btn-sm me-1 mb-1"
+                    [class.btn-primary]="lang.code === currentLanguage"
+                    [class.btn-outline-secondary]="lang.code !== currentLanguage"
+                    (click)="changeLanguage(lang.code)">
+                    {{ lang.flag }} {{ lang.code.toUpperCase() }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-2">
+            <button class="btn btn-sm btn-outline-info me-2" (click)="testI18nMessages()">
+              🧪 Testar Mensagens I18N
+            </button>
+            <small class="text-muted">
+              <strong>Nota:</strong> Todas as requisições para /api/ incluem automaticamente ?lang={{ currentLanguage }}
+            </small>
+          </div>
+          <div class="mt-2" *ngIf="i18nInfo">
+            <small class="text-muted">
+              <strong>Exemplo atual:</strong> {{ i18nInfo.sampleMessage }}
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Debug Info -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-warning">
+        <div class="card-header bg-warning text-dark">
+          <h6 class="mb-0">🔍 Debug - Informações de Conectividade WebSocket</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <small><strong>URL:</strong> {{ debugInfo.url }}</small><br>
+              <small><strong>Estado:</strong> {{ debugInfo.connectionState }}</small><br>
+              <small><strong>Conectado:</strong> {{ debugInfo.connected ? '✅ Sim' : '❌ Não' }}</small><br>
+            </div>
+            <div class="col-md-6">
+              <small><strong>Tentativas:</strong> {{ debugInfo.reconnectAttempts }}/{{ debugInfo.maxReconnectAttempts }}</small><br>
+              <small><strong>Delay:</strong> {{ debugInfo.reconnectDelay }}ms</small><br>
+              <small><strong>STOMP Client:</strong> {{ debugInfo.hasStompClient ? '✅ Criado' : '❌ Não criado' }}</small><br>
+            </div>
+          </div>
+          <div class="mt-2">
+            <button class="btn btn-sm btn-outline-warning" (click)="reconnectSSE()">
+              🔄 Forçar Reconexão WebSocket
+            </button>
+            <small class="text-muted ms-2">
+              Use este botão se a conexão WebSocket estiver com problemas
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row mb-4" *ngIf="stats">
+    <div class="col-md-2">
+      <div class="card stats-card">
+        <div class="card-body text-center">
+          <div class="stat-number">{{ stats.totalRecords }}</div>
+          <div class="stat-label">Total</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card stats-card">
+        <div class="card-body text-center">
+          <div class="stat-number text-success">{{ stats.externalRecords }}</div>
+          <div class="stat-label">Externos</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card stats-card">
+        <div class="card-body text-center">
+          <div class="stat-number text-primary">{{ stats.internalRecords }}</div>
+          <div class="stat-label">Internos</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stats-card">
+        <div class="card-body text-center">
+          <div class="stat-number text-info">{{ stats.activeSSEConnections }}</div>
+          <div class="stat-label">Conexões WebSocket</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card stats-card">
+        <div class="card-body text-center">
+          <small class="text-muted">Última atualização:</small>
+          <div class="small">{{ stats.lastCreatedAt !== 'N/A' ? formatDate(stats.lastCreatedAt) : 'N/A' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Left Column - Data Management -->
+    <div class="col-lg-8">
+      <!-- Action Buttons -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Ações (Mensagens em Português via ?lang=pt)</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-md-3">
+              <button class="btn btn-primary w-100" (click)="refreshData()" [disabled]="loading">
+                <span class="spinner-border spinner-border-sm me-2" *ngIf="loading"></span>
+                Atualizar Dados
+              </button>
+            </div>
+            <div class="col-md-3">
+              <button 
+                class="btn btn-success w-100" 
+                (click)="forceExternalFetch()"
+                [disabled]="!canManageSSE()"
+                [title]="!canManageSSE() ? 'Sem permissão' : 'Buscar dados externos'">
+                Buscar Externos
+                <i class="fas fa-lock ms-1" *ngIf="!canManageSSE()"></i>
+              </button>
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-warning w-100" (click)="sendTestNotification()">
+                Teste WebSocket
+              </button>
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-secondary w-100" (click)="reconnectSSE()" [disabled]="isConnected">
+                Reconectar WebSocket
+              </button>
+            </div>
+          </div>
+          <div class="mt-2">
+            <small class="text-muted">
+              💡 <strong>Dica:</strong> Todas as ações acima enviarão requisições com ?lang={{ currentLanguage }} automaticamente
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create New Item -->
+      <div class="card mb-4" *ngIf="canEditData()">
+        <div class="card-header">
+          <h5 class="mb-0">Criar Novo Item</h5>
+        </div>
+        <div class="card-body">
+          <form (ngSubmit)="createNewItem()" #itemForm="ngForm">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  placeholder="Nome do item"
+                  [(ngModel)]="newItem.name"
+                  name="name"
+                  required>
+              </div>
+              <div class="col-md-4">
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  placeholder="Valor do item"
+                  [(ngModel)]="newItem.value"
+                  name="value"
+                  required>
+              </div>
+              <div class="col-md-4">
+                <button 
+                  type="submit" 
+                  class="btn btn-primary w-100"
+                  [disabled]="!itemForm.form.valid">
+                  Criar Item
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Permission Notice for Viewers -->
+      <div class="alert alert-info" *ngIf="!canEditData()">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Modo Visualização:</strong> Você tem permissão apenas para visualizar os dados. 
+        Para criar, editar ou excluir dados, entre em contato com um administrador.
+      </div>
+
+      <!-- Data Tabs -->
+      <div class="card">
+        <div class="card-header">
+          <div class="d-flex justify-content-between align-items-center">
+            <ul class="nav nav-tabs card-header-tabs mb-0">
+              <li class="nav-item">
+                <a class="nav-link" 
+                   [class.active]="activeTab === 'all'"
+                   (click)="setActiveTab('all')"
+                   style="cursor: pointer;">
+                  Todos ({{ allData.length }})
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" 
+                   [class.active]="activeTab === 'external'"
+                   (click)="setActiveTab('external')"
+                   style="cursor: pointer;">
+                  Externos ({{ externalData.length }})
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" 
+                   [class.active]="activeTab === 'internal'"
+                   (click)="setActiveTab('internal')"
+                   style="cursor: pointer;">
+                  Internos ({{ internalData.length }})
+                </a>
+              </li>
+            </ul>
+            
+            <!-- CORRIGIDO: Informações de paginação no header -->
+            <div class="pagination-info" *ngIf="!loading && getCurrentData().length > 0">
+              <small class="text-muted">
+                Mostrando {{ getStartIndex() }} - {{ getEndIndex() }} de {{ getCurrentData().length }} registros
+              </small>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <!-- Loading State -->
+          <div class="loading text-center py-4" *ngIf="loading">
+            <div class="spinner-border spinner-border-sm me-2"></div>
+            Carregando dados...
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state text-center py-5" *ngIf="!loading && getCurrentData().length === 0">
+            <div class="mb-3" style="font-size: 3rem;">📄</div>
+            <h5>Nenhum dado encontrado</h5>
+            <p class="text-muted">Não há registros para exibir nesta categoria.</p>
+          </div>
+
+          <!-- NOVO: Data List Paginada -->
+          <div class="row" *ngIf="!loading && getPaginatedData().length > 0">
+            <div class="col-md-6 mb-3" *ngFor="let item of getPaginatedData()">
+              <div class="data-item" [class.external]="item.isExternal" [class.internal]="!item.isExternal">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1">
+                    <h6 class="mb-2">
+                      {{ item.name }}
+                      <span class="badge ms-2" 
+                            [class.bg-success]="item.isExternal" 
+                            [class.bg-primary]="!item.isExternal">
+                        {{ item.isExternal ? 'Externo' : 'Interno' }}
+                      </span>
+                    </h6>
+                    <p class="mb-1"><strong>Valor:</strong> {{ item.value }}</p>
+                    <small class="text-muted">
+                      <strong>Criado:</strong> {{ formatDate(item.createdAt!) }}
+                    </small>
+                    <small class="text-muted d-block" *ngIf="item.updatedAt">
+                      <strong>Atualizado:</strong> {{ formatDate(item.updatedAt) }}
+                    </small>
+                  </div>
+                  <button 
+                    *ngIf="canEditData()"
+                    class="btn btn-outline-danger btn-sm"
+                    (click)="deleteItem(item.id!)"
+                    title="Excluir item">
+                    🗑️
+                  </button>
+                  <span 
+                    *ngIf="!canEditData()"
+                    class="badge bg-secondary"
+                    title="Sem permissão para excluir">
+                    🔒
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NOVO: Controles de Paginação -->
+          <div class="pagination-controls" *ngIf="!loading && totalPages > 1">
+            <nav aria-label="Navegação de páginas">
+              <div class="d-flex justify-content-between align-items-center">
+                
+                <!-- Informações da página atual -->
+                <div class="page-info">
+                  <small class="text-muted">
+                    Página {{ currentPage }} de {{ totalPages }}
+                    ({{ itemsPerPage }} itens por página)
+                  </small>
+                </div>
+
+                <!-- Controles de navegação -->
+                <ul class="pagination pagination-sm mb-0">
+                  <!-- Primeira página -->
+                  <li class="page-item" [class.disabled]="currentPage === 1">
+                    <button class="page-link" (click)="goToFirstPage()" [disabled]="currentPage === 1">
+                      <i class="fas fa-angle-double-left"></i>
+                    </button>
+                  </li>
+                  
+                  <!-- Página anterior -->
+                  <li class="page-item" [class.disabled]="currentPage === 1">
+                    <button class="page-link" (click)="goToPreviousPage()" [disabled]="currentPage === 1">
+                      <i class="fas fa-angle-left"></i>
+                    </button>
+                  </li>
+
+                  <!-- Números das páginas -->
+                  <li class="page-item" 
+                      *ngFor="let page of getPageNumbers()" 
+                      [class.active]="page === currentPage">
+                    <button class="page-link" (click)="goToPage(page)">
+                      {{ page }}
+                    </button>
+                  </li>
+
+                  <!-- Próxima página -->
+                  <li class="page-item" [class.disabled]="currentPage === totalPages">
+                    <button class="page-link" (click)="goToNextPage()" [disabled]="currentPage === totalPages">
+                      <i class="fas fa-angle-right"></i>
+                    </button>
+                  </li>
+
+                  <!-- Última página -->
+                  <li class="page-item" [class.disabled]="currentPage === totalPages">
+                    <button class="page-link" (click)="goToLastPage()" [disabled]="currentPage === totalPages">
+                      <i class="fas fa-angle-double-right"></i>
+                    </button>
+                  </li>
+                </ul>
+
+                <!-- CORRIGIDO: Seletor de itens por página -->
+                <div class="items-per-page">
+                  <small class="text-muted me-2">Itens por página:</small>
+                  <select class="form-select form-select-sm" 
+                          [(ngModel)]="itemsPerPage" 
+                          (change)="currentPage = 1; updatePagination()"
+                          style="width: auto; display: inline-block;">
+                    <option [value]="6">6</option>
+                    <option [value]="12">12</option>
+                    <option [value]="24">24</option>
+                    <option [value]="48">48</option>
+                  </select>
+                </div>
+              </div>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column - Notifications -->
+    <div class="col-lg-4">
+      <!-- 🆕 Abas para diferentes tipos de notificações -->
+      <div class="card">
+        <div class="card-header">
+          <ul class="nav nav-tabs card-header-tabs mb-0">
+            <li class="nav-item">
+              <a class="nav-link active" 
+                 data-bs-toggle="tab" 
+                 href="#general-notifications"
+                 style="cursor: pointer;">
+                📢 Gerais
+                <span class="badge bg-primary ms-1" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" 
+                 data-bs-toggle="tab" 
+                 href="#message-notifications"
+                 style="cursor: pointer;">
+                📨 Mensagens
+                <span class="badge bg-info ms-1" *ngIf="unreadMessageCount > 0">{{ unreadMessageCount }}</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="tab-content">
+          <!-- Aba de Notificações Gerais -->
+          <div class="tab-pane fade show active" id="general-notifications">
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Notificações WebSocket</h6>
+                <button 
+                  class="btn btn-outline-secondary btn-sm"
+                  (click)="clearNotifications()"
+                  *ngIf="notifications.length > 0">
+                  Limpar
+                </button>
+              </div>
+
+              <!-- No Notifications -->
+              <div class="text-center text-muted py-4" *ngIf="notifications.length === 0">
+                <div class="mb-3">🔔</div>
+                <p>Nenhuma notificação ainda</p>
+                <small>As notificações aparecerão aqui em tempo real</small>
+                <div class="mt-2">
+                  <small class="text-info">
+                    💬 Mensagens virão em {{ languageName }} ({{ currentLanguage }})
+                  </small>
+                </div>
+              </div>
+
+              <!-- Notifications List -->
+              <div *ngFor="let notification of notifications; let i = index" class="mb-3">
+                <div class="alert py-2 px-3 mb-2" [ngClass]="getNotificationClass(notification.type)">
+                  <div class="d-flex align-items-start">
+                    <span class="me-2">{{ getNotificationIcon(notification.type) }}</span>
+                    <div class="flex-grow-1">
+                      <div class="fw-bold small">{{ notification.type }}</div>
+                      <div class="small">{{ notification.message }}</div>
+                      <div class="text-muted" style="font-size: 0.75rem;">
+                        {{ formatDate(notification.timestamp) }}
+                      </div>
+                      <div *ngIf="notification.data" class="mt-1">
+                        <small class="text-muted">
+                          <strong>Dados:</strong> 
+                          <code>{{ notification.data | json }}</code>
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 🆕 Aba de Notificações de Mensagens -->
+          <div class="tab-pane fade" id="message-notifications">
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Mensagens Recebidas</h6>
+                <div>
+                  <button 
+                    class="btn btn-outline-primary btn-sm me-2"
+                    (click)="markMessageNotificationsAsRead()"
+                    *ngIf="unreadMessageCount > 0">
+                    Marcar Lidas
+                  </button>
+                  <button 
+                    class="btn btn-outline-secondary btn-sm"
+                    (click)="clearMessageNotifications()"
+                    *ngIf="messageNotifications.length > 0">
+                    Limpar
+                  </button>
+                </div>
+              </div>
+
+              <!-- No Message Notifications -->
+              <div class="text-center text-muted py-4" *ngIf="messageNotifications.length === 0">
+                <div class="mb-3">📨</div>
+                <p>Nenhuma mensagem ainda</p>
+                <small>As notificações de mensagens aparecerão aqui</small>
+                <div class="mt-2">
+                  <small class="text-info">
+                    💡 Você receberá notificações quando mensagens forem direcionadas para você
+                  </small>
+                </div>
+              </div>
+
+              <!-- Message Notifications List -->
+              <div *ngFor="let notification of messageNotifications; let i = index" class="mb-3">
+                <div class="alert py-2 px-3 mb-2" [ngClass]="getMessageNotificationClass(notification)">
+                  <div class="d-flex align-items-start">
+                    <span class="me-2">{{ getMessageNotificationIcon(notification) }}</span>
+                    <div class="flex-grow-1">
+                      <div class="fw-bold small">
+                        {{ notification.data?.title || 'Nova Mensagem' }}
+                      </div>
+                      <div class="small text-truncate" style="max-width: 250px;">
+                        {{ notification.data?.content || notification.message }}
+                      </div>
+                      <div class="text-muted d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
+                        <span>{{ formatMessageNotificationTime(notification) }}</span>
+                        <span class="badge" 
+                              [class.bg-success]="notification.data?.type === 'SUCCESS'"
+                              [class.bg-danger]="notification.data?.type === 'ERROR'"
+                              [class.bg-warning]="notification.data?.type === 'WARNING'"
+                              [class.bg-info]="notification.data?.type === 'INFO' || !notification.data?.type">
+                          {{ notification.data?.type || 'INFO' }}
+                        </span>
+                      </div>
+                      <div *ngIf="notification.data?.messageId" class="mt-1">
+                        <small class="text-muted">
+                          ID: {{ notification.data.messageId }}
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
